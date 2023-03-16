@@ -26,11 +26,11 @@ https://youtu.be/F0XVOL1zQHM
 
 Team member Names:
 
-1. *TODO my name is...*
-2. *TODO my name is...*
-3. *TODO my name is...*
-4. *TODO my name is...*
-5. *TODO my name is...*
+1. Tejas Wate
+2. Pooja Shantaram Nangude
+3. Vanshita Tilwani
+4. Soufiane Jounaid
+5. Anuj Ashok Potdar
 
 # Team spread sheet 
 
