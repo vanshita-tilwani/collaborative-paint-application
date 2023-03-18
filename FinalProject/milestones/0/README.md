@@ -18,21 +18,24 @@ The first stage we learned in the software development life cycle is planning.
 
 ## Timeline
 
-- Date:
-	- Task/Milestone to be completed
-- Date:
-	- Task/Milestone to be completed
-- Date:
-	- Task/Milestone to be completed
-- Date:
-	- Task/Milestone to be completed
-- Date:
-	- Task/Milestone to be completed
-- Date:
-	- Task/Milestone to be completed
-- Date:
-	- Task/Milestone to be completed
-- Date:
-	- Task/Milestone to be completed
-- Date:
-	- Task/Milestone to be completed
+- Date: March 22, 2023
+	- Milestone-0 :Finish Planning. Setup and review preliminary Milestones
+- Date: March 24, 2023
+	- Milestone-1 :Create preliminary tasks for project deliverable
+- Date: March 30, 2023
+	- Milestone-2 :Setup Collaborative filtering project. Use any previous assignment started code if needed.
+- Date: March 31, 2023
+	- Milestone-4 : Check-in with Project Manager
+- Date: April 7, 2023
+	- Milestone-3 : Design and Implement Network communication Architecture
+- Date: April 10, 2023
+	- Milestone-5 : Finalise and Implement extra feature
+- Date: April 14, 2023
+	- Milestone-6 : Check-in with Project Manager
+- Date: April 16, 2023
+	- Milestone-7 : Generate release version
+- Date: April 17, 2023
+	- Milestone-8 : Complete code documentation
+- Date: April 18, 2023
+	- Milestone-9 : Create final youtube video
+
