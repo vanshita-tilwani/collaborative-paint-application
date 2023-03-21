@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/dlang-mafia-collab-paint
+dlang-mafia-collab-paint.so
+dlang-mafia-collab-paint.dylib
+dlang-mafia-collab-paint.dll
+dlang-mafia-collab-paint.a
+dlang-mafia-collab-paint.lib
+dlang-mafia-collab-paint-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst

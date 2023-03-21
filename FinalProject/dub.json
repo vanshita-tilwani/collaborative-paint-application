@@ -1,0 +1,13 @@
+{
+	"authors": [
+		"Tejas Wate"
+	],
+	"copyright": "Copyright © 2023, Tejas Wate",
+	"dependencies": {
+		"bindbc-sdl": "~>1.3.3",
+		"unit-threaded": "~>2.1.5"
+	},
+	"description": "A collaborative desktop paint application",
+	"license": "proprietary",
+	"name": "dlang-mafia-collab-paint"
+}
