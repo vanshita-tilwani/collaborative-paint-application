@@ -14,3 +14,4 @@ dlang-mafia-collab-paint-test-*
 *.o
 *.obj
 *.lst
+/.idea/
