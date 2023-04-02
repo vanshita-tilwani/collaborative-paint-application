@@ -1,6 +1,6 @@
 {
 	"authors": [
-		"mike"
+		"Anuj Potdar"
 	],
 	"copyright": "Copyright © 2023, mike",
 	"targetType": "executable",
@@ -26,5 +26,5 @@
 	],
 	"description": "A minimal D application.",
 	"license": "proprietary",
-	"name": "graphics_project"
+	"name": "graphics_client"
 }

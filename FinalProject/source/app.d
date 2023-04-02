@@ -1,44 +1,95 @@
-import std.stdio;
+module pangocairo;
 
-// Import the dependencies for gtk-d
-import gtk.MainWindow;
-import gtk.Main;
+import gio.Application : GioApplication = Application;
+import gtk.Application;
+import gtk.ApplicationWindow;
+
+import gtk.DrawingArea;
 import gtk.Widget;
 
-void QuitApp(){
-	writeln("Terminating application");
+import cairo.Context;
+import cairo.ImageSurface;
 
-	Main.quit();
+import pango.PgCairo;
+import pango.PgLayout;
+import pango.PgFontDescription;
+
+import std.stdio;
+import std.math;
+
+class PangoText : DrawingArea
+{
+	int m_radius = 150;
+	int m_nWords = 10;
+	string m_font = "Sans Bold 27";
+
+	public this()
+	{
+		addOnDraw(&drawText);
+	}
+
+	public bool drawText (Scoped!Context cr, Widget widget)
+	{
+		PgLayout layout;
+		PgFontDescription desc;
+
+		// Center coordinates on the middle of the region we are drawing
+		cr.translate(m_radius, m_radius);
+
+		// Create a PangoLayout, set the font and text
+		layout = PgCairo.createLayout(cr);
+
+		layout.setText("Text");
+		desc = PgFontDescription.fromString(m_font);
+		layout.setFontDescription(desc);
+		desc.free();
+
+		// Draw the layout m_nWords times in a circle
+		for (int i = 0; i < m_nWords; i++)
+		{
+			int width, height;
+			double angle = (360. * i) / m_nWords;
+			double red;
+
+			cr.save();
+
+			/* Gradient from red at angle == 60 to blue at angle == 240 */
+			red   = (1 + cos ((angle - 60) * PI / 180.)) / 2;
+			cr.setSourceRgb(red, 0, 1.0 - red);
+
+			cr.rotate(angle * PI / 180.);
+
+			/* Inform Pango to re-layout the text with the new transformation */
+			PgCairo.updateLayout(cr, layout);
+
+			layout.getSize(width, height);
+			cr.moveTo( -(cast(double)width / PANGO_SCALE) / 2, - m_radius );
+			PgCairo.showLayout(cr, layout);
+
+			cr.restore();
+		}
+
+		return true;
+	}
 }
 
-void main(string[] args)
+
+int main(string[] args)
 {
-	// GTK itself is a 'C' based library.
-	// This means that we need to call 'init' (the equivalent of a constructor)
-	// in order to setup our windowing system.
-	// We can forward our arguments in D to the 'Main' in our GUI application.
-	Main.init(args);
-	MainWindow firstWindow = new MainWindow("Tutorial 01");
+	Application application;
 
-	// Again, because GTK is a 'C' based library, there is no destructor.
-	// We 'build up' the destructor, by adding a series of functions
-	// that we want to call when we destroy the window.
-	// Think of it as 'add this function to be called when we'-- 'OnDestroy'
-	firstWindow.addOnDestroy(delegate void(Widget w) { QuitApp(); });
-	// NOTE: In the above we are using a 'delegate'. 
-	//       'delegates' are a bit more powerful then function pointers, in then
-	// 		 sense that they can access data in their local scope.
-	// Here's an explanation: https://forum.dlang.org/post/mailman.1908.1334790932.4860.digitalmars-d-learn@puremagic.com
+	void activatePangoText(GioApplication app)
+	{
+		auto window = new ApplicationWindow(application);
+		window.setTitle("gtkD Pango text");
+		window.setDefaultSize(300, 300);
+		auto pt = new PangoText();
+		window.add(pt);
+		pt.show();
+		window.showAll();
+	}
 
-
-	writeln("Hello GtkD");
-
-	// Show our window and any of its components.
-	// See: https://docs.gtk.org/gtk3/#gtk-widget-show-all
-	firstWindow.showAll();
-
-	// Give control to GTK library to run its main loop.
-	// Effectively, the 'MainWindow' has its own loop that is executing
-	// and managed until we explicitly end the program.
-	Main.run();
+	application = new Application("org.gtkd.demo.pangocairo", GApplicationFlags.FLAGS_NONE);
+	application.addOnActivate(&activatePangoText);
+	return application.run(args);
 }

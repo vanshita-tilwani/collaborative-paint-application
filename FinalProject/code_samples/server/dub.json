@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"Anuj Potdar"
+	],
+	"copyright": "Copyright © 2023, Anuj Potdar",
+	"description": "A minimal D application.",
+	"license": "proprietary",
+	"name": "server"
+}

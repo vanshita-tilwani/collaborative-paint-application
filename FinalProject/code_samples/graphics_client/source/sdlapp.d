@@ -1,5 +1,6 @@
 import std.stdio;
 import std.string;
+import std.socket;
 
 import bindbc.sdl;
 import loader = bindbc.loader.sharedlib;
@@ -11,7 +12,6 @@ const SDLSupport ret;
 
 shared static this() {
 
-    writeln("Starting the program");
     version(Windows){
         writeln("Searching for SDL on Windows");
         ret = loadSDL("SDL2.dll");
@@ -64,7 +64,7 @@ class SDLApp {
 
     public:
 
-    void MainApplicationLoop() {
+    void MainApplicationLoop(Socket socket) {
         while (runApplication) {
             SDL_Event e;
 
@@ -81,6 +81,12 @@ class SDLApp {
                     else if (e.type == SDL_MOUSEMOTION && drawing) {
                             int xPos = e.button.x;
                             int yPos = e.button.y;
+
+                            if (xPos > 0 && yPos > 0) {
+                                socket.send(format("%s,%s",xPos, yPos));
+                            }
+
+
 
                             int brushSize = 4;
                             for (int w = -brushSize; w < brushSize; w++) {

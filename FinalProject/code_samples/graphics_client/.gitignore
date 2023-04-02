@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/graphics_client
+graphics_client.so
+graphics_client.dylib
+graphics_client.dll
+graphics_client.a
+graphics_client.lib
+graphics_client-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst
