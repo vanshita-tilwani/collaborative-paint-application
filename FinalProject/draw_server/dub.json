@@ -1,0 +1,12 @@
+{
+	"authors": [
+		"Soufiane Jounaid"
+	],
+	"copyright": "Copyright © 2023, Soufiane Jounaid",
+	"dependencies": {
+		"gtk-d": "~>3.10.0"
+	},
+	"description": "A minimal D application.",
+	"license": "proprietary",
+	"name": "collaborative-paint-server"
+}
