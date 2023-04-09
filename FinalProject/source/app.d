@@ -32,7 +32,7 @@ class DrawingCanvas : DrawingArea
 
 	public this()
 	{
-		addOnDraw(&drawPixel);
+		addOnDraw(&drawPixels);
 		addOnMotionNotify(&onMouseMotion);
 		addOnButtonPress(&onMousePress);
 		addOnButtonRelease(&onButtonRelease);

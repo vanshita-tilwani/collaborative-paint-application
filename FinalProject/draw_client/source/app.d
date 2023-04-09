@@ -1,95 +1,208 @@
-// @file chat/client.d
-//
-// After starting server (rdmd server.d)
-// then start as many clients as you like with "rdmd client.d"
-//
-import std.socket;
+module dlangmafiacollabpaint;
+
+import std.socket : Socket, AddressFamily, InternetAddress, SocketType;
 import std.stdio;
+import std.conv;
+import std.regex;
+import core.stdc.stdlib : exit;
 import core.thread.osthread;
 
-/// The purpose of the TCPClient class is to 
-/// connect to a server and send messages.
-class TCPClient{
-	/// Constructor
-	this(string host = "localhost", ushort port=50001){
+import gio.Application : GioApplication = Application;
+
+import gtk.Application;
+import gtk.ApplicationWindow;
+import gtk.DrawingArea;
+import gtk.Widget;
+
+import gdk.Event;
+import gdk.Window;
+import gdk.c.functions;
+
+import cairo.c.types;
+import cairo.c.functions;
+
+import cairo.Context;
+import cairo.Surface;
+import cairo.ImageSurface;
+
+import std.stdio;
+import std.math;
+
+struct coords {
+	double x;
+	double y;
+}
+
+class DrawingCanvas : DrawingArea
+{
+	Socket clientSocket;
+
+	coords[] draw_coords;	
+	bool drawing = false;
+
+	public this(Application app, string host = "localhost", ushort port=50001)
+	{
+		// Socket setup
 		writeln("Starting client...attempt to create socket");
-		// Create a socket for connecting to a server
-		// Note: AddressFamily.INET tells us we are using IPv4 Internet protocol
-		// Note: SOCK_STREAM (SocketType.STREAM) creates a TCP Socket
-		//       If you want UDPClient and UDPServer use 'SOCK_DGRAM' (SocketType.DGRAM)
-		mSocket = new Socket(AddressFamily.INET, SocketType.STREAM);
-		// Socket needs an 'endpoint', so we determine where we
-		// are going to connect to.
-		// NOTE: It's possible the port number is in use if you are not
-		//       able to connect. Try another one.
-		mSocket.connect(new InternetAddress(host, port));
+		clientSocket = new Socket(AddressFamily.INET, SocketType.STREAM);
+		clientSocket.connect(new InternetAddress(host, port));
 		writeln("Client conncted to server");
-		// Our client waits until we receive at least one message
-		// confirming that we are connected
-		// This will be something like "Hello friend\0"
+		
 		char[80] buffer;
-		auto received = mSocket.receive(buffer);
+		auto received = clientSocket.receive(buffer);
 		writeln("(incoming from server) ", buffer[0 .. received]);
+
+		new Thread({
+			chatMessaging();
+		}).start();
+
+		new Thread({
+			receiveDataFromServer();
+		}).start();
+
+		// Gio callback
+		app.addOnShutdown(&onWindowClose);
+
+		// GTK callbacks
+		addOnDraw(&drawPixels);
+		addOnMotionNotify(&onMouseMotion);
+		addOnButtonPress(&onMousePress);
+		addOnButtonRelease(&onButtonRelease);
 	}
 
-	/// Destructor 
 	~this(){
-		// Close the socket
-		mSocket.close();
+		clientSocket.close();
 	}
 
-	// Purpose here is to run the client thread to constantly send data to the server.
-	// This is your 'main' application code.
-	// 
-	// In order to make life a little easier, I will also spin up a new thread that constantly
-	// receives data from the server.
-	void run(){
-		writeln("Preparing to run client");
-		writeln("(me)",mSocket.localAddress(),"<---->",mSocket.remoteAddress(),"(server)");
-		// Buffer of data to send out
-		// Choose '80' bytes of information to be sent/received
-
+	void chatMessaging(){
 		bool clientRunning=true;
 		
-		// Spin up the new thread that will just take in data from the server
-		new Thread({
-					receiveDataFromServer();
-				}).start();
-	
 		write(">");
 		while(clientRunning){
 			foreach(line; stdin.byLine){
 				write(">");
 				// Send the packet of information
-				mSocket.send(line);
+				clientSocket.send(line);
 			}
 				// Now we'll immedietely block and await data from the server
 		}
-
 	}
 
+	coords parseCoords(string str_coords){
+		auto r = regex(r"(\d+),(\d+)");
+		int x = -1;
+		int y = -1;
+		auto exp = matchFirst(str_coords, r);
+		if (exp.empty()) {
+			return coords(0,0);
+		}
+		else {
+			return coords(to!double(exp[1]),to!double(exp[2]));
+		}
+	}
 
-	/// Purpose of this function is to receive data from the server as it is broadcast out.
 	void receiveDataFromServer(){
 		while(true){	
 			// Note: It's important to recreate or 'zero out' the buffer so that you do not
 			// 			 get previous data leftover in the buffer.
 			char[80] buffer;
-			auto fromServer = buffer[0 .. mSocket.receive(buffer)];
-			if(fromServer.length > 0){
-				writeln("(from server)>",fromServer);
+			
+			auto got = clientSocket.receive(buffer);
+
+			auto fromServer = buffer[0 .. got];
+
+			if (fromServer.length > 0) {
+				if (fromServer[10 .. 13] == "drw") {
+					draw_coords ~= [parseCoords(fromServer[10 .. fromServer.length].dup)];
+					queueDraw();
+				}
+				else
+					writeln("(from server)>",fromServer);
 			}
 		}
 	}
 
-	/// The client socket connected to a server
-	Socket mSocket;
-	
+	// SHUTDOWN procedure
+	public void onWindowClose(GioApplication app) {
+		clientSocket.close();
+		writeln("dlang mafia collaborative paint app shutting down");
+		exit(0);
+	}
+
+	// GTK Event handling //
+	public bool onMouseMotion(Event event, Widget widget) {
+		bool value = false;
+
+		if(event.type == EventType.MOTION_NOTIFY && drawing == true)
+		{
+			GdkEventButton* mouseEvent = event.button;
+			draw_coords ~= [coords(mouseEvent.x, mouseEvent.y)];
+			widget.queueDraw();
+			clientSocket.send("drw " ~ to!string(mouseEvent.x) ~ "," ~ to!string(mouseEvent.y));
+			value = true;
+		}
+
+		return(value);
+	}
+
+	public bool onMousePress(Event event, Widget widget) {
+		bool value = false;
+		
+		if(event.type == EventType.BUTTON_PRESS)
+		{
+			GdkEventButton* mouseEvent = event.button;
+			draw_coords ~= [coords(mouseEvent.x, mouseEvent.y)];
+			widget.queueDraw();
+			clientSocket.send("drw " ~ to!string(mouseEvent.x) ~ "," ~ to!string(mouseEvent.y));
+			value = true;
+			drawing = true;
+		}
+
+		return(value);
+	}
+
+	public bool onButtonRelease(Event event, Widget widget)
+	{
+		bool value = false;
+
+		if(event.type == EventType.BUTTON_RELEASE)
+		{
+			GdkEventButton* mouseEvent = event.button;
+			value = true;
+			drawing = false;
+		}
+
+		return(value);
+	}
+
+	// GTK Drawing //
+	public bool drawPixels(Scoped!Context cr, Widget widget) {
+		foreach (coords coordinates ; draw_coords) {
+			cr.setLineWidth(5);
+			cr.setSourceRgba(0.1, 0.2, 0.3, 0.8);
+			cr.rectangle(coordinates.x, coordinates.y, 1, 1);
+			cr.stroke();
+		}
+
+		return(true);	
+	}
 }
 
+int main(string[] args){
+	Application application;
 
-// Entry point to client
-void main(){
-	TCPClient client = new TCPClient();
-	client.run();
+	void activateCanvas(GioApplication app)
+	{
+		auto window = new ApplicationWindow(application);
+		window.setTitle("Collaborative paint");
+		window.setDefaultSize(600, 600);
+		auto pt = new DrawingCanvas(application);
+		window.add(pt);
+		pt.show();
+		window.showAll();
+	}
+
+	application = new Application("org.dlangmafia.collabpaint", GApplicationFlags.FLAGS_NONE);
+	application.addOnActivate(&activateCanvas);
+	return application.run(args);
 }
