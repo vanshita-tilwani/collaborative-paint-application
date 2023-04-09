@@ -61,7 +61,7 @@ class TCPServer{
 			
 			clientProfiles ~= newClient;
 
-			mCurrentMessageToSend[newClient.clientID] = messageHistory.length;
+			mCurrentMessageToSend[newClient.clientID] = 0;
 
 			writeln("Active clients = ", clientProfiles.length);
 
