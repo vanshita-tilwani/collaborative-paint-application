@@ -15,7 +15,7 @@ struct ClientProfile {
 struct ClientMessage {
 	int clientID;
 	int length;
-	char[80] data;
+	char[256] data;
 }
 
 class TCPServer{
@@ -87,11 +87,11 @@ class TCPServer{
 
 		while(runThreadLoop){
 			// Message buffer will be 80 bytes
-			char[80] buffer;
+			char[256] buffer;
 			// Server is now waiting to handle data from specific client
 			// We'll block the server awaiting to receive a message.
 			auto got = client.socket.receive(buffer);
-			writeln("Received some data (bytes): ",got);
+			writeln("receiving from client ", client.clientID, ", msg: ", buffer[0 .. got]);
 			if (got == 0) {
 				// Then remove the socket
 				runThreadLoop = false;
@@ -100,19 +100,15 @@ class TCPServer{
 				break;
 			}
 
-			messageHistory ~= ClientMessage(client.clientID, to!int(got), buffer);;
+			messageHistory ~= ClientMessage(client.clientID, to!int(got), buffer);
 
 			broadcastToAllClients();
 		}
 
 	}
 
-	/// The purpose of this function is to broadcast
-	/// messages to all of the clients that are currently
-	/// connected.
-	void broadcastToAllClients(){
-		writeln("Broadcasting to :", clientProfiles.length);
 
+	void broadcastToAllClients(){
 		foreach(client; clientProfiles){
 			// Send whatever the latest data was to all the
 			// clients.
@@ -120,9 +116,14 @@ class TCPServer{
 				continue;
 			while(mCurrentMessageToSend[client.clientID] <= messageHistory.length-1){
 				ClientMessage msg = messageHistory[mCurrentMessageToSend[client.clientID]];
+				if (msg.clientID == client.clientID){
+					mCurrentMessageToSend[client.clientID]++;
+					continue;
+				}
 				string prefix = "client " ~ to!string(msg.clientID) ~ ": ";
 				char[] toSend = prefix.dup ~ msg.data[0 .. msg.length];
-				string _data = toSend.idup(); // create immutable copy
+				string _data = toSend.idup(); 
+				writeln("sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", _data);
 				client.socket.send(_data.dup);
 				// Important to increment the message only after sending
 				// the previous message to as many clients as exist.

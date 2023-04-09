@@ -4,6 +4,7 @@ import std.socket : Socket, AddressFamily, InternetAddress, SocketType;
 import std.stdio;
 import std.conv;
 import std.regex;
+import std.algorithm;
 import core.stdc.stdlib : exit;
 import core.thread.osthread;
 
@@ -31,6 +32,10 @@ import std.math;
 struct coords {
 	double x;
 	double y;
+	double r;
+	double g;
+	double b;
+	double a;
 }
 
 class DrawingCanvas : DrawingArea
@@ -39,6 +44,12 @@ class DrawingCanvas : DrawingArea
 
 	coords[] draw_coords;	
 	bool drawing = false;
+	
+	// color
+	double r = 30.0;
+	double g = 0.4;
+	double b = 200.3;
+	double a = 0.8;
 
 	public this(Application app, string host = "localhost", ushort port=50001)
 	{
@@ -77,27 +88,34 @@ class DrawingCanvas : DrawingArea
 	void chatMessaging(){
 		bool clientRunning=true;
 		
-		write(">");
 		while(clientRunning){
 			foreach(line; stdin.byLine){
-				write(">");
-				// Send the packet of information
 				clientSocket.send(line);
 			}
-				// Now we'll immedietely block and await data from the server
 		}
 	}
 
-	coords parseCoords(string str_coords){
-		auto r = regex(r"(\d+),(\d+)");
+	coords parseCoords(string draw_details){
 		int x = -1;
 		int y = -1;
-		auto exp = matchFirst(str_coords, r);
-		if (exp.empty()) {
+		writeln(draw_details);
+		writeln("4.1");
+		auto match = matchFirst(draw_details, r"drw (\d+),(\d+) (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+.\d*) ");
+		writeln("4.2");
+
+		if (match.empty()) {
+			writeln("4.2.1");
 			return coords(0,0);
 		}
 		else {
-			return coords(to!double(exp[1]),to!double(exp[2]));
+			writeln("4.2.2");
+			writeln(match);
+			return coords(to!double(match[1]),
+						  to!double(match[2]),
+						  to!double(match[3]),
+						  to!double(match[4]),
+						  to!double(match[5]),
+						  to!double(match[6]));
 		}
 	}
 
@@ -106,18 +124,24 @@ class DrawingCanvas : DrawingArea
 			// Note: It's important to recreate or 'zero out' the buffer so that you do not
 			// 			 get previous data leftover in the buffer.
 			char[80] buffer;
-			
+			writeln("1");
 			auto got = clientSocket.receive(buffer);
-
+			writeln("2");
 			auto fromServer = buffer[0 .. got];
-
-			if (fromServer.length > 0) {
-				if (fromServer[10 .. 13] == "drw") {
-					draw_coords ~= [parseCoords(fromServer[10 .. fromServer.length].dup)];
+			
+			// extracting id and content
+			auto match = matchFirst(fromServer, r"client (\d+): ([\S+\s+]+)");
+			string msg_content = match[2].dup;
+			writeln("3");
+			if (msg_content.length > 0) {
+				if (startsWith(msg_content, "drw")) {
+					writeln("4");
+					draw_coords ~= [parseCoords(msg_content)];
+					writeln("5");
 					queueDraw();
 				}
 				else
-					writeln("(from server)>",fromServer);
+					writeln("(from server) ",fromServer);
 			}
 		}
 	}
@@ -136,9 +160,17 @@ class DrawingCanvas : DrawingArea
 		if(event.type == EventType.MOTION_NOTIFY && drawing == true)
 		{
 			GdkEventButton* mouseEvent = event.button;
-			draw_coords ~= [coords(mouseEvent.x, mouseEvent.y)];
+			draw_coords ~= [coords(mouseEvent.x, 
+								   mouseEvent.y,
+								   r,g,b,a)];
 			widget.queueDraw();
-			clientSocket.send("drw " ~ to!string(mouseEvent.x) ~ "," ~ to!string(mouseEvent.y));
+			clientSocket.send("drw " 
+			                  ~ to!string(mouseEvent.x) 
+							  ~ "," ~ to!string(mouseEvent.y) 
+							  ~ " " ~ to!string(r)
+							  ~ ", " ~ to!string(g)
+							  ~ ", " ~ to!string(b)
+							  ~ ", " ~ to!string(a) ~ " ");
 			value = true;
 		}
 
@@ -151,9 +183,17 @@ class DrawingCanvas : DrawingArea
 		if(event.type == EventType.BUTTON_PRESS)
 		{
 			GdkEventButton* mouseEvent = event.button;
-			draw_coords ~= [coords(mouseEvent.x, mouseEvent.y)];
+			draw_coords ~= [coords(mouseEvent.x, 
+								   mouseEvent.y,
+								   r,g,b,a)];
 			widget.queueDraw();
-			clientSocket.send("drw " ~ to!string(mouseEvent.x) ~ "," ~ to!string(mouseEvent.y));
+			clientSocket.send("drw " 
+			                  ~ to!string(mouseEvent.x) 
+							  ~ "," ~ to!string(mouseEvent.y) 
+							  ~ " " ~ to!string(r)
+							  ~ ", " ~ to!string(g)
+							  ~ ", " ~ to!string(b)
+							  ~ ", " ~ to!string(a) ~ " ");
 			value = true;
 			drawing = true;
 		}
@@ -177,10 +217,10 @@ class DrawingCanvas : DrawingArea
 
 	// GTK Drawing //
 	public bool drawPixels(Scoped!Context cr, Widget widget) {
-		foreach (coords coordinates ; draw_coords) {
+		foreach (coords cord ; draw_coords) {
 			cr.setLineWidth(5);
-			cr.setSourceRgba(0.1, 0.2, 0.3, 0.8);
-			cr.rectangle(coordinates.x, coordinates.y, 1, 1);
+			cr.setSourceRgba(cord.r, cord.g, cord.b, cord.a);
+			cr.rectangle(cord.x, cord.y, 1, 1);
 			cr.stroke();
 		}
 
