@@ -36,7 +36,6 @@ class DrawingCanvas : DrawingArea
 		addOnMotionNotify(&onMouseMotion);
 		addOnButtonPress(&onMousePress);
 		addOnButtonRelease(&onButtonRelease);
-		
 	}
 
 	public bool onMouseMotion(Event event, Widget widget) {
@@ -85,7 +84,7 @@ class DrawingCanvas : DrawingArea
 		return(value);
 	}
 
-	public bool drawPixel(Scoped!Context cr, Widget widget) {
+	public bool drawPixels(Scoped!Context cr, Widget widget) {
 		foreach (coords coordinates ; draw_coords) {
 			cr.setLineWidth(5);
 			cr.setSourceRgba(0.1, 0.2, 0.3, 0.8);
