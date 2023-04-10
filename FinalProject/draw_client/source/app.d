@@ -22,6 +22,7 @@ import gtk.Menu;
 import gtk.MenuBar;
 import gtk.MenuItem;
 import gtk.Box;
+import gtk.Button;
 
 import gdk.Event;
 import gdk.Window;
@@ -48,7 +49,11 @@ class DrawingCanvas : DrawingArea
 {
 	Socket clientSocket;
 
-	coords[] draw_coords;	
+	coords[] draw_coords;
+
+	// Keeps track of what to draw
+	long draw_head;
+	
 	bool drawing = false;
 	
 	// color
@@ -152,6 +157,36 @@ class DrawingCanvas : DrawingArea
 
 		myBox.packStart(menuBar,false,false,0);
 
+		Button undoButton = new Button("Undo");
+		Button redoButton = new Button("Redo");
+
+		myBox.packStart(undoButton,false,false,localPadding);
+		myBox.packStart(redoButton,false,false,localPadding);
+		
+		undoButton.addOnPressed(delegate void(Button b){
+			if (draw_head > 0){
+				draw_head--;
+				queueDraw();
+				printDrawHead();
+			}
+		});
+		
+		// undoButton.addOnReleased(delegate void(Button b){
+		// 	writeln("undo release");
+		// });
+
+		redoButton.addOnPressed(delegate void(Button b){
+			if (draw_head < draw_coords.length){
+				draw_head++;
+				queueDraw();
+				printDrawHead();
+			}
+		});
+
+		// redoButton.addOnReleased(delegate void(Button b){
+		// 	writeln("redo release");
+		// });
+
 		window.add(myBox);
 		window.showAll();
 
@@ -177,6 +212,10 @@ class DrawingCanvas : DrawingArea
 				clientSocket.send(line);
 			}
 		}
+	}
+
+	void printDrawHead(){
+		writeln("Draw head at ", draw_head, "/", draw_coords.length);
 	}
 
 	coords parseCoords(string draw_details){
@@ -211,6 +250,8 @@ class DrawingCanvas : DrawingArea
 				if (startsWith(msg_content, "drw")) {
 					draw_coords ~= [parseCoords(msg_content)];
 					queueDraw();
+					draw_head++;
+					printDrawHead();
 				}
 				else
 					writeln("(from server) ",fromServer);
@@ -247,6 +288,10 @@ class DrawingCanvas : DrawingArea
 		if(event.type == EventType.MOTION_NOTIFY && drawing == true)
 		{
 			GdkEventButton* mouseEvent = event.button;
+
+			draw_head++;
+			draw_coords = draw_coords[0 .. draw_head - 1];
+
 			draw_coords ~= [coords(mouseEvent.x, 
 								   mouseEvent.y,
 								   r,g,b,a,
@@ -261,6 +306,7 @@ class DrawingCanvas : DrawingArea
 							  ~ ", " ~ to!string(a)
 							  ~ ", " ~ to!string(brush_size) ~ " ";
 			clientSocket.send(formatDrawMsg(data));
+			printDrawHead();
 			value = true;
 		}
 
@@ -273,6 +319,10 @@ class DrawingCanvas : DrawingArea
 		if(event.type == EventType.BUTTON_PRESS)
 		{
 			GdkEventButton* mouseEvent = event.button;
+
+			draw_head++;
+			draw_coords = draw_coords[0 .. draw_head - 1];
+
 			draw_coords ~= [coords(mouseEvent.x, 
 								   mouseEvent.y,
 								   r,g,b,a, 
@@ -287,6 +337,7 @@ class DrawingCanvas : DrawingArea
 							  ~ ", " ~ to!string(a)
 							  ~ ", " ~ to!string(brush_size) ~ " ";
 			clientSocket.send(formatDrawMsg(data));
+			printDrawHead();
 			value = true;
 			drawing = true;
 		}
@@ -310,7 +361,8 @@ class DrawingCanvas : DrawingArea
 
 	// GTK Drawing //
 	public bool drawPixels(Scoped!Context cr, Widget widget) {
-		foreach (coords cord ; draw_coords) {
+		for (long i = 0; i < draw_head; i++) {
+			coords cord = draw_coords[i];
 			cr.setLineWidth(cord.brush_size);
 			cr.setSourceRgba(cord.r, cord.g, cord.b, cord.a);
 			cr.rectangle(cord.x, cord.y, 1, 1);
