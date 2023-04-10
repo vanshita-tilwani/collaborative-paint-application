@@ -69,9 +69,19 @@ class TCPServer{
 
 			writeln("Active clients = ", clientProfiles.length);
 
-			newClient.socket.send("Hello\0");
-
 			broadcastToAllClients();
+
+			// Sending the draw head to the new client to synchronize them
+			auto helloMessage = "client -1: hello " ~ to!string(draw_head) ~ " ";
+			char[90] toSend;
+			char[] temp = helloMessage.dup;
+			for (int i = 0; i < 90; i++) {
+				if (i < helloMessage.length)
+					toSend[i] = temp[i];
+				else
+					toSend[i] = '.';
+			}
+			newClient.socket.send(toSend);
 
 			new Thread({
 					clientLoop(newClient);
@@ -98,7 +108,7 @@ class TCPServer{
 			// Server is now waiting to handle data from specific client
 			// We'll block the server awaiting to receive a message.
 			auto got = client.socket.receive(buffer);
-			writeln("receiving from client ", client.clientID, ", msg: ", buffer[0 .. got]);
+			writeln("(debug) receiving from client ", client.clientID, ", msg: ", buffer[0 .. got]);
 			if (got == 0) {
 				// Then remove the socket
 				runThreadLoop = false;
@@ -137,7 +147,7 @@ class TCPServer{
 			else 
 				messageHistory ~= ClientMessage(client.clientID, to!int(got), buffer);
 
-			writeln("Draw head at ", draw_head, "/", drawHistory.length);
+			writeln("(debug) Draw head at ", draw_head, "/", drawHistory.length);
 			broadcastToAllClients();
 		}
 
@@ -162,7 +172,7 @@ class TCPServer{
 					continue;
 				}
 				
-				// writeln("sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(msg));
+				writeln("(debug) sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(msg));
 				client.socket.send(formatMessage(msg).dup);
 				mCurrentMessageToSend[client.clientID]++;
 			}
@@ -175,7 +185,7 @@ class TCPServer{
 					continue;
 				}
 
-				writeln("sending draw from client ", draw_msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(draw_msg));
+				writeln("(debug) sending draw from client ", draw_msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(draw_msg));
 				client.socket.send(formatMessage(draw_msg).dup);
 				mCurrentDrawToSend[client.clientID]++;
 			}
@@ -187,12 +197,11 @@ class TCPServer{
 
 // Entry point to Server
 void main(){
-	// Note: I'm just using the defaults here.
-	// write("Please input an ip address for the server to run on: ");
-	// string host = readln().chomp;
-	// write("Please input a port number for the server to run on: ");
-	// ushort port = to!ushort(readln().chomp);
+	write("Please input an ip address for the server to run on: ");
+	string host = readln().chomp;
+	write("Please input a port number for the server to run on: ");
+	ushort port = to!ushort(readln().chomp);
 
-	TCPServer server = new TCPServer();
+	TCPServer server = new TCPServer(host, port);
 	server.run();
 }

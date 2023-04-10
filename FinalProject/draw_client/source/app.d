@@ -24,6 +24,8 @@ import gtk.MenuItem;
 import gtk.Box;
 import gtk.Button;
 
+import glib.Timeout;
+
 import gdk.Event;
 import gdk.Window;
 import gdk.c.functions;
@@ -35,7 +37,7 @@ import cairo.Context;
 import cairo.Surface;
 import cairo.ImageSurface;
 
-struct coords {
+struct drawInstruction {
 	double x;
 	double y;
 	double r;
@@ -49,9 +51,9 @@ class DrawingCanvas : DrawingArea
 {
 	Socket clientSocket;
 
-	coords[] draw_coords;
+	drawInstruction[] drawHistory;
 
-	// Keeps track of what to draw
+	// Index to which we draw to
 	long draw_head;
 	
 	bool drawing = false;
@@ -72,10 +74,6 @@ class DrawingCanvas : DrawingArea
 		clientSocket = new Socket(AddressFamily.INET, SocketType.STREAM);
 		clientSocket.connect(new InternetAddress(host, port));
 		writeln("Client conncted to server");
-		
-		char[80] buffer;
-		auto received = clientSocket.receive(buffer);
-		writeln("(incoming from server) ", buffer[0 .. received]);
 
 		new Thread({
 			chatMessaging();
@@ -163,31 +161,28 @@ class DrawingCanvas : DrawingArea
 		myBox.packStart(undoButton,false,false,localPadding);
 		myBox.packStart(redoButton,false,false,localPadding);
 		
+		// These timeouts are meant to execute a function in time intervals
+		// We use these to execute the redo and undo functions quicker
+		// currently set to 10 ms
+		Timeout undoTimeout;
+
 		undoButton.addOnPressed(delegate void(Button b){
-			if (draw_head > 0){
-				draw_head--;
-				queueDraw();
-				clientSocket.send(formatDrawMsg("undo"));
-				printDrawHead();
-			}
+			undoTimeout = new Timeout(10, &undoAndSend, true);
 		});
-		
-		// undoButton.addOnReleased(delegate void(Button b){
-		// 	writeln("undo release");
-		// });
+
+		undoButton.addOnReleased(delegate void(Button b){
+			undoTimeout.stop();
+		});
+
+		Timeout redoTimeout;
 
 		redoButton.addOnPressed(delegate void(Button b){
-			if (draw_head < draw_coords.length){
-				draw_head++;
-				queueDraw();
-				clientSocket.send(formatDrawMsg("redo"));
-				printDrawHead();
-			}
+			redoTimeout = new Timeout(10, &redoAndSend, true);
 		});
 
-		// redoButton.addOnReleased(delegate void(Button b){
-		// 	writeln("redo release");
-		// });
+		redoButton.addOnReleased(delegate void(Button b){
+			redoTimeout.stop();
+		});
 
 		window.add(myBox);
 		window.showAll();
@@ -206,6 +201,40 @@ class DrawingCanvas : DrawingArea
 		clientSocket.close();
 	}
 
+	bool undo(){
+		if (draw_head > 0){
+			draw_head--;
+			queueDraw();
+			return true;
+		}
+		return false;
+	}
+
+	bool redo(){
+		if (draw_head < drawHistory.length){
+			draw_head++;
+			queueDraw();
+			return true;
+		}
+		return false;
+	}
+
+	bool undoAndSend(){
+		if (undo()){
+			clientSocket.send(padMessage("undo"));
+			return true;
+		}
+		return false;
+	}
+	
+	bool redoAndSend(){
+		if (redo()){
+			clientSocket.send(padMessage("redo"));
+			return true;
+		}
+		return false;
+	}
+
 	void chatMessaging(){
 		bool clientRunning=true;
 		
@@ -217,25 +246,24 @@ class DrawingCanvas : DrawingArea
 	}
 
 	void printDrawHead(){
-		writeln("Draw head at ", draw_head, "/", draw_coords.length);
+		writeln("(debug) Draw head at ", draw_head, "/", drawHistory.length);
 	}
 
-	coords parseCoords(string draw_details){
-		int x = -1;
-		int y = -1;
-		auto match = matchFirst(draw_details, r"drw (\d+),(\d+) (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+) ");
+	// Message format: drw x,y r,g,b,a 
+	drawInstruction parseDrawInstruction(string draw_args){
+		auto match = matchFirst(draw_args, r"drw (\d+),(\d+) (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+) ");
 
 		if (match.empty()) {
-			return coords(0,0);
+			return drawInstruction(0,0); // this should trigger an exception
 		}
 		else {
-			return coords(to!double(match[1]),
-						  to!double(match[2]),
-						  to!double(match[3]),
-						  to!double(match[4]),
-						  to!double(match[5]),
-						  to!double(match[6]),
-						  to!int(match[7]));
+			return drawInstruction(to!double(match[1]),
+								   to!double(match[2]),
+								   to!double(match[3]),
+								   to!double(match[4]),
+								   to!double(match[5]),
+								   to!double(match[6]),
+								   to!int(match[7]));
 		}
 	}
 
@@ -246,31 +274,26 @@ class DrawingCanvas : DrawingArea
 			auto fromServer = buffer[0 .. got]; 
 			
 			// extracting id and content
-			auto match = matchFirst(fromServer, r"client (\d+): ([\S+\s+]+)");
+			auto match = matchFirst(fromServer, r"client (-*\d+): ([\S+\s+]+)");
 			string msg_content = match[2].dup;
 			if (msg_content.length > 0) {
 				if (startsWith(msg_content, "drw")) {
 					draw_head++;
-					draw_coords = draw_coords[0 .. draw_head - 1];
-					draw_coords ~= [parseCoords(msg_content)];
+					drawHistory = drawHistory[0 .. draw_head - 1];
+					drawHistory ~= [parseDrawInstruction(msg_content)];
 					queueDraw();
-					printDrawHead();
 				}
-				else if (startsWith(msg_content, "undo")){
-					if (draw_head > 0){
-						draw_head--;
-						queueDraw();
-						printDrawHead();
-					}
+				else if (startsWith(msg_content, "hello")) {
+					writeln("(debug) syncing draw head with server");
+					auto matchHelloMsg = matchFirst(msg_content, r"hello (\d+) ");
+					draw_head = to!long(matchHelloMsg[1]);
+					queueDraw();
 				}
-				else if (startsWith(msg_content, "redo")){
-					if (draw_head < draw_coords.length){
-						draw_head++;
-						queueDraw();
-						printDrawHead();
-					}	
-				}
-				else
+				else if (startsWith(msg_content, "undo"))
+					undo();
+				else if (startsWith(msg_content, "redo"))
+					redo();
+				else 
 					writeln("(from server) ",fromServer);
 			}
 		}
@@ -283,10 +306,10 @@ class DrawingCanvas : DrawingArea
 		exit(0);
 	}
 
-	// Formatting message to be exactly 80 characters
-	// this is crucial for socket.receive to receive exactly one message 
-	// at a time
-	char[80] formatDrawMsg(string data){
+	// Padding message with dots to be exactly 80 characters
+	// It is crucial for messages sent to the server to be exactly 80 character
+	// so that socket.receive can receive one message at a time
+	char[80] padMessage(string data){
 		char[80] buffer;
 		char[] temp = data.dup;
 		for (int i = 0; i < 80; i++) {
@@ -305,15 +328,16 @@ class DrawingCanvas : DrawingArea
 		if(event.type == EventType.MOTION_NOTIFY && drawing == true)
 		{
 			GdkEventButton* mouseEvent = event.button;
-
+			
 			draw_head++;
-			draw_coords = draw_coords[0 .. draw_head - 1];
+			drawHistory = drawHistory[0 .. draw_head - 1]; // Cut the history to draw head to dissallow redo if someone draws
 
-			draw_coords ~= [coords(mouseEvent.x, 
-								   mouseEvent.y,
-								   r,g,b,a,
-								   brush_size)];
+			drawHistory ~= [drawInstruction(mouseEvent.x, 
+											mouseEvent.y,
+											r,g,b,a,
+											brush_size)];
 			widget.queueDraw();
+			// This could be moved to a function
 			string data = "drw " 
 			                  ~ to!string(mouseEvent.x) 
 							  ~ "," ~ to!string(mouseEvent.y) 
@@ -322,8 +346,7 @@ class DrawingCanvas : DrawingArea
 							  ~ ", " ~ to!string(b)
 							  ~ ", " ~ to!string(a)
 							  ~ ", " ~ to!string(brush_size) ~ " ";
-			clientSocket.send(formatDrawMsg(data));
-			printDrawHead();
+			clientSocket.send(padMessage(data));
 			value = true;
 		}
 
@@ -338,12 +361,13 @@ class DrawingCanvas : DrawingArea
 			GdkEventButton* mouseEvent = event.button;
 
 			draw_head++;
-			draw_coords = draw_coords[0 .. draw_head - 1];
-			draw_coords ~= [coords(mouseEvent.x, 
-								   mouseEvent.y,
-								   r,g,b,a, 
-								   brush_size)];
+			drawHistory = drawHistory[0 .. draw_head - 1]; // Cut the history to draw head to dissallow redo if someone draws
+			drawHistory ~= [drawInstruction(mouseEvent.x, 
+											mouseEvent.y,
+											r,g,b,a, 
+											brush_size)];
 			widget.queueDraw();
+			// This could be moved to a function
 			string data = "drw " 
 			                  ~ to!string(mouseEvent.x) 
 							  ~ "," ~ to!string(mouseEvent.y) 
@@ -352,8 +376,7 @@ class DrawingCanvas : DrawingArea
 							  ~ ", " ~ to!string(b)
 							  ~ ", " ~ to!string(a)
 							  ~ ", " ~ to!string(brush_size) ~ " ";
-			clientSocket.send(formatDrawMsg(data));
-			printDrawHead();
+			clientSocket.send(padMessage(data));
 			value = true;
 			drawing = true;
 		}
@@ -377,11 +400,15 @@ class DrawingCanvas : DrawingArea
 
 	// GTK Drawing //
 	public bool drawPixels(Scoped!Context cr, Widget widget) {
+		printDrawHead();
 		for (long i = 0; i < draw_head; i++) {
-			coords cord = draw_coords[i];
-			cr.setLineWidth(cord.brush_size);
-			cr.setSourceRgba(cord.r, cord.g, cord.b, cord.a);
-			cr.rectangle(cord.x, cord.y, 1, 1);
+			drawInstruction drawInstruction = drawHistory[i];
+			cr.setLineWidth(drawInstruction.brush_size);
+			cr.setSourceRgba(drawInstruction.r, 
+							 drawInstruction.g, 
+							 drawInstruction.b, 
+							 drawInstruction.a);
+			cr.rectangle(drawInstruction.x, drawInstruction.y, 1, 1);
 			cr.stroke();
 		}
 		return(true);	
@@ -391,17 +418,17 @@ class DrawingCanvas : DrawingArea
 int main(string[] args){
 	Application application;
 
-	// write("Please input a server ip address for the client to connect to: ");
-	// string host = readln().chomp;
-	// write("Please input a port number for the client to connect to: ");
-	// ushort port = to!ushort(readln().chomp);
+	write("Please input a server ip address for the client to connect to: ");
+	string host = readln().chomp;
+	write("Please input a port number for the client to connect to: ");
+	ushort port = to!ushort(readln().chomp);
 
 	void activateCanvas(GioApplication app)
 	{
 		auto window = new ApplicationWindow(application);
 		window.setTitle("Collaborative paint");
 		window.setDefaultSize(600, 600);
-		auto pt = new DrawingCanvas(application, window);
+		auto pt = new DrawingCanvas(application, window, host, port);
 	}
 
 	application = new Application("org.dlangmafia.collabpaint", GApplicationFlags.FLAGS_NONE);
