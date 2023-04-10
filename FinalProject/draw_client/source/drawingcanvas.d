@@ -68,7 +68,7 @@ class DrawingCanvas : DrawingArea
 	// brush size
 	int brush_size = 2;
 
-	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50001)
+	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50002)
 	{
 		// Socket setup
 		writeln("Starting client...attempt to create socket");
@@ -86,7 +86,7 @@ class DrawingCanvas : DrawingArea
 
 		// Box
 		const int globalPadding=2;
-        const int localPadding= 2;
+        const int localPadding= 5;
         auto myBox = new Box(Orientation.VERTICAL,globalPadding);
 		
 
@@ -160,6 +160,8 @@ class DrawingCanvas : DrawingArea
 
 		Button undoButton = new Button("Undo");
 		Button redoButton = new Button("Redo");
+        
+        
 
 		myBox.packStart(undoButton,false,false,localPadding);
 		myBox.packStart(redoButton,false,false,localPadding);
