@@ -3,6 +3,7 @@
 		"Soufiane Jounaid"
 	],
 	"copyright": "Copyright © 2023, Soufiane Jounaid",
+	"targetType": "executable",
 	"configurations":[
         {"name":"executable"      },
         {
