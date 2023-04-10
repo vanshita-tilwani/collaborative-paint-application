@@ -167,6 +167,7 @@ class DrawingCanvas : DrawingArea
 			if (draw_head > 0){
 				draw_head--;
 				queueDraw();
+				clientSocket.send(formatDrawMsg("undo"));
 				printDrawHead();
 			}
 		});
@@ -179,6 +180,7 @@ class DrawingCanvas : DrawingArea
 			if (draw_head < draw_coords.length){
 				draw_head++;
 				queueDraw();
+				clientSocket.send(formatDrawMsg("redo"));
 				printDrawHead();
 			}
 		});
@@ -248,10 +250,25 @@ class DrawingCanvas : DrawingArea
 			string msg_content = match[2].dup;
 			if (msg_content.length > 0) {
 				if (startsWith(msg_content, "drw")) {
+					draw_head++;
+					draw_coords = draw_coords[0 .. draw_head - 1];
 					draw_coords ~= [parseCoords(msg_content)];
 					queueDraw();
-					draw_head++;
 					printDrawHead();
+				}
+				else if (startsWith(msg_content, "undo")){
+					if (draw_head > 0){
+						draw_head--;
+						queueDraw();
+						printDrawHead();
+					}
+				}
+				else if (startsWith(msg_content, "redo")){
+					if (draw_head < draw_coords.length){
+						draw_head++;
+						queueDraw();
+						printDrawHead();
+					}	
 				}
 				else
 					writeln("(from server) ",fromServer);
@@ -322,7 +339,6 @@ class DrawingCanvas : DrawingArea
 
 			draw_head++;
 			draw_coords = draw_coords[0 .. draw_head - 1];
-
 			draw_coords ~= [coords(mouseEvent.x, 
 								   mouseEvent.y,
 								   r,g,b,a, 

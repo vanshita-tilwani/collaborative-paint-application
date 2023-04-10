@@ -20,15 +20,18 @@ struct ClientMessage {
 }
 
 class TCPServer{
-	/// The listening socket is responsible for handling new client connections.
 	Socket serverSocket;
-	/// Stores the clients that are currently connected to the server.
+
 	ClientProfile[] clientProfiles;
-	/// Stores all of the data on the server. Ideally, we'll
-	/// use this to broadcast out to clients connected.
+
 	ClientMessage[] messageHistory;
-	/// Keeps track of the last message that was broadcast out to each client.
+	ClientMessage[] drawHistory;
+
+	long draw_head;
+
 	long[int] mCurrentMessageToSend;
+	long[int] mCurrentDrawToSend;
+
 	// Unique ID dispenser variable
 	int clientIDCounter = 0;	
 
@@ -62,10 +65,13 @@ class TCPServer{
 			clientProfiles ~= newClient;
 
 			mCurrentMessageToSend[newClient.clientID] = 0;
+			mCurrentDrawToSend[newClient.clientID] = 0;
 
 			writeln("Active clients = ", clientProfiles.length);
 
 			newClient.socket.send("Hello\0");
+
+			broadcastToAllClients();
 
 			new Thread({
 					clientLoop(newClient);
@@ -101,32 +107,77 @@ class TCPServer{
 				break;
 			}
 
-			messageHistory ~= ClientMessage(client.clientID, to!int(got), buffer);
+			if (buffer[0 .. 3] == "drw"){
+				draw_head++;
+				drawHistory = drawHistory[0 .. draw_head - 1];
+				drawHistory ~= ClientMessage(client.clientID, to!int(got), buffer); 	
+				foreach(tmpp_client; clientProfiles) {
+					if (mCurrentDrawToSend[tmpp_client.clientID] >= drawHistory.length)
+						mCurrentDrawToSend[tmpp_client.clientID] = draw_head - 1;
+				}
+			}
+			else if (buffer[0 .. 4] == "undo"){
+				draw_head--;
+				foreach(temp_client;clientProfiles) {
+					if (temp_client == client) 
+						continue;
+					temp_client.socket.send(
+						formatMessage(ClientMessage(client.clientID, to!int(got), buffer)));
+				}
+			}
+			else if (buffer[0 .. 4] == "redo") {
+				draw_head++;
+				foreach(temp_client;clientProfiles) {
+					if (temp_client == client) 
+						continue;
+					temp_client.socket.send(
+						formatMessage(ClientMessage(client.clientID, to!int(got), buffer)));
+				}
+			}
+			else 
+				messageHistory ~= ClientMessage(client.clientID, to!int(got), buffer);
 
+			writeln("Draw head at ", draw_head, "/", drawHistory.length);
 			broadcastToAllClients();
 		}
 
 	}
 
+	string formatMessage(ClientMessage msg) {
+		string prefix = "client " ~ to!string(msg.clientID) ~ ": ";
+		char[] toSend = prefix.dup ~ msg.data[0 .. msg.length];
+		return toSend.idup();
+	}
 
 	void broadcastToAllClients(){
 		foreach(client; clientProfiles){
-			// Send whatever the latest data was to all the
-			// clients.
 			if (client.alive == false)
 				continue;
-			while(mCurrentMessageToSend[client.clientID] <= messageHistory.length-1){
+			
+			while(messageHistory.length > 0 && mCurrentMessageToSend[client.clientID] <= messageHistory.length-1){
 				ClientMessage msg = messageHistory[mCurrentMessageToSend[client.clientID]];
+
 				if (msg.clientID == client.clientID){
 					mCurrentMessageToSend[client.clientID]++;
 					continue;
 				}
-				string prefix = "client " ~ to!string(msg.clientID) ~ ": ";
-				char[] toSend = prefix.dup ~ msg.data[0 .. msg.length];
-				string _data = toSend.idup(); 
-				writeln("sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", _data);
-				client.socket.send(_data.dup);
+				
+				// writeln("sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(msg));
+				client.socket.send(formatMessage(msg).dup);
 				mCurrentMessageToSend[client.clientID]++;
+			}
+
+			while(drawHistory.length > 0 && mCurrentDrawToSend[client.clientID] <= drawHistory.length-1){
+				ClientMessage draw_msg = drawHistory[mCurrentDrawToSend[client.clientID]];
+
+				if (draw_msg.clientID == client.clientID){
+					mCurrentDrawToSend[client.clientID]++;
+					continue;
+				}
+
+				writeln("sending draw from client ", draw_msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(draw_msg));
+				client.socket.send(formatMessage(draw_msg).dup);
+				mCurrentDrawToSend[client.clientID]++;
 			}
 		}
 	}
