@@ -3,8 +3,21 @@
 		"Soufiane Jounaid"
 	],
 	"copyright": "Copyright © 2023, Soufiane Jounaid",
+	"configurations":[
+        {"name":"executable"      },
+        {
+            "name":"unittest",
+            "preBuildCommands": ["dub run unit-threaded -c gen_ut_main -- -f bin/ut.d -d dub"],
+            "mainSourceFile":"bin/ut.d",
+            "excludedSourceFiles": ["source/app.d"],
+            "dependencies": {
+                "unit-threaded": "~>2.1.5"
+            }
+        }
+    ],
 	"dependencies": {
-		"gtk-d": "~>3.10.0"
+		"gtk-d": "~>3.10.0",
+		"unit-threaded": "~>2.1.5"
 	},
 	"description": "A minimal D application.",
 	"license": "proprietary",
