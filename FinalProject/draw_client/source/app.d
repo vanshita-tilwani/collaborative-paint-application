@@ -182,18 +182,12 @@ class DrawingCanvas : DrawingArea
 	coords parseCoords(string draw_details){
 		int x = -1;
 		int y = -1;
-		writeln(draw_details);
-		writeln("4.1");
 		auto match = matchFirst(draw_details, r"drw (\d+),(\d+) (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+) ");
-		writeln("4.2");
 
 		if (match.empty()) {
-			writeln("4.2.1");
 			return coords(0,0);
 		}
 		else {
-			writeln("4.2.2");
-			writeln(match);
 			return coords(to!double(match[1]),
 						  to!double(match[2]),
 						  to!double(match[3]),
@@ -206,23 +200,16 @@ class DrawingCanvas : DrawingArea
 
 	void receiveDataFromServer(){
 		while(true){	
-			// Note: It's important to recreate or 'zero out' the buffer so that you do not
-			// 			 get previous data leftover in the buffer.
-			char[80] buffer;
-			writeln("1");
+			char[90] buffer;
 			auto got = clientSocket.receive(buffer);
-			writeln("2");
-			auto fromServer = buffer[0 .. got];
+			auto fromServer = buffer[0 .. got]; 
 			
 			// extracting id and content
 			auto match = matchFirst(fromServer, r"client (\d+): ([\S+\s+]+)");
 			string msg_content = match[2].dup;
-			writeln("3");
 			if (msg_content.length > 0) {
 				if (startsWith(msg_content, "drw")) {
-					writeln("4");
 					draw_coords ~= [parseCoords(msg_content)];
-					writeln("5");
 					queueDraw();
 				}
 				else
@@ -238,6 +225,21 @@ class DrawingCanvas : DrawingArea
 		exit(0);
 	}
 
+	// Formatting message to be exactly 80 characters
+	// this is crucial for socket.receive to receive exactly one message 
+	// at a time
+	char[80] formatDrawMsg(string data){
+		char[80] buffer;
+		char[] temp = data.dup;
+		for (int i = 0; i < 80; i++) {
+			if (i < data.length)
+				buffer[i] = temp[i];
+			else
+				buffer[i] = '.';
+		}
+		return buffer;
+	}
+
 	// GTK Input Event handling //
 	public bool onMouseMotion(Event event, Widget widget) {
 		bool value = false;
@@ -250,14 +252,15 @@ class DrawingCanvas : DrawingArea
 								   r,g,b,a,
 								   brush_size)];
 			widget.queueDraw();
-			clientSocket.send("drw " 
+			string data = "drw " 
 			                  ~ to!string(mouseEvent.x) 
 							  ~ "," ~ to!string(mouseEvent.y) 
 							  ~ " " ~ to!string(r)
 							  ~ ", " ~ to!string(g)
 							  ~ ", " ~ to!string(b)
 							  ~ ", " ~ to!string(a)
-							  ~ ", " ~ to!string(brush_size) ~ " ");
+							  ~ ", " ~ to!string(brush_size) ~ " ";
+			clientSocket.send(formatDrawMsg(data));
 			value = true;
 		}
 
@@ -275,14 +278,15 @@ class DrawingCanvas : DrawingArea
 								   r,g,b,a, 
 								   brush_size)];
 			widget.queueDraw();
-			clientSocket.send("drw " 
+			string data = "drw " 
 			                  ~ to!string(mouseEvent.x) 
 							  ~ "," ~ to!string(mouseEvent.y) 
 							  ~ " " ~ to!string(r)
 							  ~ ", " ~ to!string(g)
 							  ~ ", " ~ to!string(b)
 							  ~ ", " ~ to!string(a)
-							  ~ ", " ~ to!string(brush_size) ~ " ");
+							  ~ ", " ~ to!string(brush_size) ~ " ";
+			clientSocket.send(formatDrawMsg(data));
 			value = true;
 			drawing = true;
 		}
@@ -319,17 +323,17 @@ class DrawingCanvas : DrawingArea
 int main(string[] args){
 	Application application;
 
-	write("Please input a server ip address for the client to connect to: ");
-	string host = readln().chomp;
-	write("Please input a port number for the client to connect to: ");
-	ushort port = to!ushort(readln().chomp);
+	// write("Please input a server ip address for the client to connect to: ");
+	// string host = readln().chomp;
+	// write("Please input a port number for the client to connect to: ");
+	// ushort port = to!ushort(readln().chomp);
 
 	void activateCanvas(GioApplication app)
 	{
 		auto window = new ApplicationWindow(application);
 		window.setTitle("Collaborative paint");
 		window.setDefaultSize(600, 600);
-		auto pt = new DrawingCanvas(application, window, host, port);
+		auto pt = new DrawingCanvas(application, window);
 	}
 
 	application = new Application("org.dlangmafia.collabpaint", GApplicationFlags.FLAGS_NONE);

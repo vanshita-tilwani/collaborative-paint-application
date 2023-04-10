@@ -16,7 +16,7 @@ struct ClientProfile {
 struct ClientMessage {
 	int clientID;
 	int length;
-	char[256] data;
+	char[80] data;
 }
 
 class TCPServer{
@@ -88,7 +88,7 @@ class TCPServer{
 
 		while(runThreadLoop){
 			// Message buffer will be 80 bytes
-			char[256] buffer;
+			char[80] buffer;
 			// Server is now waiting to handle data from specific client
 			// We'll block the server awaiting to receive a message.
 			auto got = client.socket.receive(buffer);
@@ -126,8 +126,6 @@ class TCPServer{
 				string _data = toSend.idup(); 
 				writeln("sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", _data);
 				client.socket.send(_data.dup);
-				// Important to increment the message only after sending
-				// the previous message to as many clients as exist.
 				mCurrentMessageToSend[client.clientID]++;
 			}
 		}
@@ -139,11 +137,11 @@ class TCPServer{
 // Entry point to Server
 void main(){
 	// Note: I'm just using the defaults here.
-	write("Please input an ip address for the server to run on: ");
-	string host = readln().chomp;
-	write("Please input a port number for the server to run on: ");
-	ushort port = to!ushort(readln().chomp);
+	// write("Please input an ip address for the server to run on: ");
+	// string host = readln().chomp;
+	// write("Please input a port number for the server to run on: ");
+	// ushort port = to!ushort(readln().chomp);
 
-	TCPServer server = new TCPServer(host, port);
+	TCPServer server = new TCPServer();
 	server.run();
 }
