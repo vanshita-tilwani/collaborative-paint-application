@@ -1,44 +1,119 @@
-import std.stdio;
+module pangocairo;
+import gio.Application : GioApplication = Application;
 
-// Import the dependencies for gtk-d
-import gtk.MainWindow;
-import gtk.Main;
+import gtk.Application;
+import gtk.ApplicationWindow;
+import gtk.DrawingArea;
 import gtk.Widget;
 
-void QuitApp(){
-	writeln("Terminating application");
+import gdk.Event;
+import gdk.Window;
+import gdk.c.functions;
 
-	Main.quit();
+import cairo.c.types;
+import cairo.c.functions;
+
+import cairo.Context;
+import cairo.Surface;
+import cairo.ImageSurface;
+
+import std.stdio;
+import std.math;
+
+struct coords {
+	double x;
+	double y;
 }
 
-void main(string[] args)
+class DrawingCanvas : DrawingArea
 {
-	// GTK itself is a 'C' based library.
-	// This means that we need to call 'init' (the equivalent of a constructor)
-	// in order to setup our windowing system.
-	// We can forward our arguments in D to the 'Main' in our GUI application.
-	Main.init(args);
-	MainWindow firstWindow = new MainWindow("Tutorial 01");
+	coords[] draw_coords;	
+	bool drawing = false;
 
-	// Again, because GTK is a 'C' based library, there is no destructor.
-	// We 'build up' the destructor, by adding a series of functions
-	// that we want to call when we destroy the window.
-	// Think of it as 'add this function to be called when we'-- 'OnDestroy'
-	firstWindow.addOnDestroy(delegate void(Widget w) { QuitApp(); });
-	// NOTE: In the above we are using a 'delegate'. 
-	//       'delegates' are a bit more powerful then function pointers, in then
-	// 		 sense that they can access data in their local scope.
-	// Here's an explanation: https://forum.dlang.org/post/mailman.1908.1334790932.4860.digitalmars-d-learn@puremagic.com
+	public this()
+	{
+		addOnDraw(&drawPixels);
+		addOnMotionNotify(&onMouseMotion);
+		addOnButtonPress(&onMousePress);
+		addOnButtonRelease(&onButtonRelease);
+	}
+
+	public bool onMouseMotion(Event event, Widget widget) {
+		bool value = false;
+
+		if(event.type == EventType.MOTION_NOTIFY && drawing == true)
+		{
+			GdkEventButton* mouseEvent = event.button;
+			writeln("Mouse motion ", mouseEvent.x, " ", mouseEvent.y);
+			draw_coords ~= [coords(mouseEvent.x, mouseEvent.y)];
+			widget.queueDraw();
+			value = true;
+		}
+
+		return(value);
+	}
+
+	public bool onMousePress(Event event, Widget widget) {
+		bool value = false;
+		
+		if(event.type == EventType.BUTTON_PRESS)
+		{
+			GdkEventButton* mouseEvent = event.button;
+			writeln("Mouse pressed ", mouseEvent.x, " ", mouseEvent.y);
+			draw_coords ~= [coords(mouseEvent.x, mouseEvent.y)];
+			widget.queueDraw();
+			value = true;
+			drawing = true;
+		}
+
+		return(value);
+	}
+
+	public bool onButtonRelease(Event event, Widget widget)
+	{
+		bool value = false;
+
+		if(event.type == EventType.BUTTON_RELEASE)
+		{
+			GdkEventButton* mouseEvent = event.button;
+			writeln("Mouse released ", mouseEvent.x, " ", mouseEvent.y);
+			value = true;
+			drawing = false;
+		}
+
+		return(value);
+	}
+
+	public bool drawPixels(Scoped!Context cr, Widget widget) {
+		foreach (coords coordinates ; draw_coords) {
+			cr.setLineWidth(5);
+			cr.setSourceRgba(0.1, 0.2, 0.3, 0.8);
+			cr.rectangle(coordinates.x, coordinates.y, 1, 1);
+			cr.stroke();
+		}
+
+		return(true);	
+	}
+}
 
 
-	writeln("Hello GtkD");
+int main(string[] args)
+{
+	Application application;
 
-	// Show our window and any of its components.
-	// See: https://docs.gtk.org/gtk3/#gtk-widget-show-all
-	firstWindow.showAll();
+	void activateCanvas(GioApplication app)
+	{
+		auto window = new ApplicationWindow(application);
+		window.setTitle("Collaborative paint");
+		window.setDefaultSize(600, 600);
+		auto pt = new DrawingCanvas();
+		window.add(pt);
+		pt.show();
+		window.showAll();
 
-	// Give control to GTK library to run its main loop.
-	// Effectively, the 'MainWindow' has its own loop that is executing
-	// and managed until we explicitly end the program.
-	Main.run();
+	}
+
+	application = new Application("org.dlangmafia.collabpaint", GApplicationFlags.FLAGS_NONE);
+	application.addOnActivate(&activateCanvas);
+	return application.run(args);
 }
