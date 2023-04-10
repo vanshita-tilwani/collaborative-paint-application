@@ -172,7 +172,7 @@ class TCPServer{
 					continue;
 				}
 				
-				writeln("(debug) sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(msg));
+				writeln("sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(msg));
 				client.socket.send(formatMessage(msg).dup);
 				mCurrentMessageToSend[client.clientID]++;
 			}
@@ -185,7 +185,7 @@ class TCPServer{
 					continue;
 				}
 
-				writeln("(debug) sending draw from client ", draw_msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(draw_msg));
+				writeln("sending draw from client ", draw_msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(draw_msg));
 				client.socket.send(formatMessage(draw_msg).dup);
 				mCurrentDrawToSend[client.clientID]++;
 			}
@@ -197,11 +197,11 @@ class TCPServer{
 
 // Entry point to Server
 void main(){
-	write("Please input an ip address for the server to run on: ");
-	string host = readln().chomp;
-	write("Please input a port number for the server to run on: ");
-	ushort port = to!ushort(readln().chomp);
+	// write("Please input an ip address for the server to run on: ");
+	// string host = readln().chomp;
+	// write("Please input a port number for the server to run on: ");
+	// ushort port = to!ushort(readln().chomp);
 
-	TCPServer server = new TCPServer(host, port);
+	TCPServer server = new TCPServer();
 	server.run();
 }

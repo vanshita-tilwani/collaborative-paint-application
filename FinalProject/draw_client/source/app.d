@@ -240,7 +240,7 @@ class DrawingCanvas : DrawingArea
 		
 		while(clientRunning){
 			foreach(line; stdin.byLine){
-				clientSocket.send(line);
+				clientSocket.send(padMessage(line.dup).dup);
 			}
 		}
 	}
@@ -267,6 +267,7 @@ class DrawingCanvas : DrawingArea
 		}
 	}
 
+
 	void receiveDataFromServer(){
 		while(true){	
 			char[90] buffer;
@@ -283,8 +284,8 @@ class DrawingCanvas : DrawingArea
 					drawHistory ~= [parseDrawInstruction(msg_content)];
 					queueDraw();
 				}
-				else if (startsWith(msg_content, "hello")) {
-					writeln("(debug) syncing draw head with server");
+				else if (startsWith(msg_content, "hello") && to!int(match[1]) == -1) {
+					writeln("(debug) syncing draw head with server, ");
 					auto matchHelloMsg = matchFirst(msg_content, r"hello (\d+) ");
 					draw_head = to!long(matchHelloMsg[1]);
 					queueDraw();
@@ -418,17 +419,17 @@ class DrawingCanvas : DrawingArea
 int main(string[] args){
 	Application application;
 
-	write("Please input a server ip address for the client to connect to: ");
-	string host = readln().chomp;
-	write("Please input a port number for the client to connect to: ");
-	ushort port = to!ushort(readln().chomp);
+	// write("Please input a server ip address for the client to connect to: ");
+	// string host = readln().chomp;
+	// write("Please input a port number for the client to connect to: ");
+	// ushort port = to!ushort(readln().chomp);
 
 	void activateCanvas(GioApplication app)
 	{
 		auto window = new ApplicationWindow(application);
 		window.setTitle("Collaborative paint");
 		window.setDefaultSize(600, 600);
-		auto pt = new DrawingCanvas(application, window, host, port);
+		auto pt = new DrawingCanvas(application, window);
 	}
 
 	application = new Application("org.dlangmafia.collabpaint", GApplicationFlags.FLAGS_NONE);
