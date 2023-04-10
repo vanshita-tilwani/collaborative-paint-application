@@ -37,15 +37,16 @@ import cairo.Context;
 import cairo.Surface;
 import cairo.ImageSurface;
 
-struct drawInstruction {
-	double x;
-	double y;
-	double r;
-	double g;
-	double b;
-	double a;
-	int brush_size;
-}
+import drawinstruction : drawInstruction;
+// struct drawInstruction {
+// 	double x;
+// 	double y;
+// 	double r;
+// 	double g;
+// 	double b;
+// 	double a;
+// 	int brush_size;
+// }
 
 class DrawingCanvas : DrawingArea
 {
@@ -67,7 +68,7 @@ class DrawingCanvas : DrawingArea
 	// brush size
 	int brush_size = 2;
 
-	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50001)
+	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50002)
 	{
 		// Socket setup
 		writeln("Starting client...attempt to create socket");

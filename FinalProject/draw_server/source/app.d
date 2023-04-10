@@ -7,17 +7,18 @@ import std.stdio;
 import std.string;
 import core.thread.osthread;
 
-struct ClientProfile { 
-	Socket socket;
-	int clientID;
-	bool alive;
-}
-
-struct ClientMessage {
-	int clientID;
-	int length;
-	char[80] data;
-}
+import clientprofile : ClientProfile;
+// struct ClientProfile { 
+// 	Socket socket;
+// 	int clientID;
+// 	bool alive;
+// }
+import clientmessage : ClientMessage;
+// struct ClientMessage {
+// 	int clientID;
+// 	int length;
+// 	char[80] data;
+// }
 
 class TCPServer{
 	Socket serverSocket;
@@ -35,7 +36,7 @@ class TCPServer{
 	// Unique ID dispenser variable
 	int clientIDCounter = 0;	
 
-	this(string host = "localhost", ushort port=50001, ushort maxConnectionsBacklog=4){
+	this(string host = "localhost", ushort port=50002, ushort maxConnectionsBacklog=4){
 		writeln("Starting server...");
 		writeln("Server must be started before clients may join");
 
