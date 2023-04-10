@@ -403,8 +403,9 @@ class DrawingCanvas : DrawingArea
 	// GTK Drawing //
 	public bool drawPixels(Scoped!Context cr, Widget widget) {
 		printDrawHead();
-		for (long i = 0; i < draw_head; i++) {
-			drawInstruction drawInstruction = drawHistory[i];
+		foreach (i, drawInstruction; drawHistory) {
+			if (i == draw_head)
+				break;
 			cr.setLineWidth(drawInstruction.brush_size);
 			cr.setSourceRgba(drawInstruction.r, 
 							 drawInstruction.g, 
