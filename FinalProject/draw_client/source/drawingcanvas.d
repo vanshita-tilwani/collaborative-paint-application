@@ -88,7 +88,7 @@ class DrawingCanvas : DrawingArea
 		const int globalPadding=2;
         const int localPadding= 2;
         auto myBox = new Box(Orientation.VERTICAL,globalPadding);
-		myBox.packStart(this,true,true,localPadding);
+		
 
 		// Menubar
 		auto menuBar = new MenuBar;
@@ -154,7 +154,9 @@ class DrawingCanvas : DrawingArea
 		menuBrushSize.append(menuBrush4);
 		menuBrushSizeItem.setSubmenu(menuBrushSize);
 
+        
 		myBox.packStart(menuBar,false,false,0);
+        myBox.packStart(this,true,true,localPadding);
 
 		Button undoButton = new Button("Undo");
 		Button redoButton = new Button("Redo");
