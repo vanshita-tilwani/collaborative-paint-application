@@ -23,6 +23,10 @@ import gtk.MenuBar;
 import gtk.MenuItem;
 import gtk.Box;
 import gtk.Button;
+import gtk.ScrolledWindow;
+import gtk.TextView;
+import gtk.TextBuffer;
+import gtk.Entry;
 
 import glib.Timeout;
 
@@ -54,6 +58,9 @@ class DrawingCanvas : DrawingArea
 
 	drawInstruction[] drawHistory;
 
+    TextView chatHistoryText;
+    
+
 	// Index to which we draw to
 	long draw_head;
 	
@@ -68,13 +75,23 @@ class DrawingCanvas : DrawingArea
 	// brush size
 	int brush_size = 2;
 
-	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50001)
+	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50002)
 	{
 		// Socket setup
 		writeln("Starting client...attempt to create socket");
 		clientSocket = new Socket(AddressFamily.INET, SocketType.STREAM);
 		clientSocket.connect(new InternetAddress(host, port));
 		writeln("Client conncted to server");
+
+		auto myChatWindow = new ScrolledWindow();
+        chatHistoryText = new TextView();
+        chatHistoryText.setEditable(false);
+        myChatWindow.add(chatHistoryText);
+        // auto mychatText = new TextView();
+        // mychatText.getBuffer().setText("Hello");
+        // mychatText.setEditable(true);
+        auto mychatText = new Entry();
+        auto sendChatButton = new SendButton("Send Chat", mychatText, chatHistoryText, clientSocket);
 
 		new Thread({
 			chatMessaging();
@@ -86,9 +103,9 @@ class DrawingCanvas : DrawingArea
 
 		// Box
 		const int globalPadding=2;
-        const int localPadding= 2;
+        const int localPadding= 5;
         auto myBox = new Box(Orientation.VERTICAL,globalPadding);
-		myBox.packStart(this,true,true,localPadding);
+		
 
 		// Menubar
 		auto menuBar = new MenuBar;
@@ -154,11 +171,13 @@ class DrawingCanvas : DrawingArea
 		menuBrushSize.append(menuBrush4);
 		menuBrushSizeItem.setSubmenu(menuBrushSize);
 
+        this.setSizeRequest(400, 400);
 		myBox.packStart(menuBar,false,false,0);
+        myBox.packStart(this,true,true,localPadding);
 
 		Button undoButton = new Button("Undo");
 		Button redoButton = new Button("Redo");
-
+        
 		myBox.packStart(undoButton,false,false,localPadding);
 		myBox.packStart(redoButton,false,false,localPadding);
 		
@@ -184,6 +203,31 @@ class DrawingCanvas : DrawingArea
 		redoButton.addOnReleased(delegate void(Button b){
 			redoTimeout.stop();
 		});
+
+
+        
+        // Chat Box
+        // auto entry = new Entry();
+        // entry.addOnKeyRelease(&onKeyRelease);
+        // entry.activate();
+
+		
+        // Timeout sendChatTimeout;
+
+		// redoButton.addOnPressed(delegate void(Button b){
+		// 	sendChatTimeout = new Timeout(10, &sendChatData, true);
+		// });
+
+		// redoButton.addOnReleased(delegate void(Button b){
+		// 	sendChatTimeout.stop();
+		// });
+
+        // sendChatButton.addOnButtonPress(&sendChatData);
+
+        // Add chat window
+        myBox.packStart(myChatWindow, true, true, localPadding);
+        myBox.packStart(mychatText, true, true, localPadding);
+        myBox.packStart(sendChatButton,false,false,localPadding);
 
 		window.add(myBox);
 		window.showAll();
@@ -295,8 +339,13 @@ class DrawingCanvas : DrawingArea
 					undo();
 				else if (startsWith(msg_content, "redo"))
 					redo();
-				else 
+				else{
 					writeln("(from server) ",fromServer);
+					string toWrite = to!string(fromServer) ~ "\n";
+					chatHistoryText.appendText(toWrite);
+                    // chatHistoryText.queueDraw();
+				}
+                    
 			}
 		}
 	}
@@ -415,5 +464,80 @@ class DrawingCanvas : DrawingArea
 			cr.stroke();
 		}
 		return(true);	
+	}
+
+    // public bool onKeyRelease(Event event, Widget widget){
+    //     bool value = false;
+
+	// 	if(event.type == EventType.KEY_RELEASE)
+	// 	{
+	// 		GdkEventKey* enterEvent = event.key;
+	// 		messageHistory ~= "hello";
+    //         queueDraw();
+	// 	}
+    //     return (true);
+    // }
+
+    // public bool sendChatData(Event event, Widget widget){
+    //         bool value = false;
+
+	// 	if(event.type == EventType.BUTTON_PRESS)
+	// 	{
+	// 		GdkEventKey* enterEvent = event.key;
+	// 		messageHistory ~= mychatText.getBuffer().getText();
+    //         writeln(messageHistory[0]);
+    //         queueDraw();
+	// 	}
+    //     return (true);
+
+    // }
+
+    // bool sendChatData(){
+        
+    //             // messageHistory ~= mychatText.getBuffer().getText();
+    //             messageHistory ~= "LOL";
+    //         writeln(messageHistory[0]);
+        
+	// 	return false;
+	// }
+
+}
+
+class SendButton : Button
+{
+    Entry entry = null;
+    TextView textview = null;
+    Socket clientSocket;
+
+    this(in string text, Entry ent, TextView tv, Socket cSocket){
+        super(text);
+        this.entry = ent;
+        this.textview = tv;
+        this.clientSocket = cSocket;
+        addOnButtonRelease(&read);
+    } 
+
+    private bool read(Event event, Widget widget){
+		writeln("writing text right here");
+        if(entry.getText){
+            clientSocket.send(padMessage(entry.getText()).dup);
+            entry.setText("");
+        }
+        return true;
+    }
+
+    // Padding message with dots to be exactly 80 characters
+	// It is crucial for messages sent to the server to be exactly 80 character
+	// so that socket.receive can receive one message at a time
+	private char[80] padMessage(string data){
+		char[80] buffer;
+		char[] temp = data.dup;
+		for (int i = 0; i < 80; i++) {
+			if (i < data.length)
+				buffer[i] = temp[i];
+			else
+				buffer[i] = '.';
+		}
+		return buffer;
 	}
 }

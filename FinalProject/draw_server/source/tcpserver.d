@@ -38,7 +38,7 @@ class TCPServer{
 	// Unique ID dispenser variable
 	int clientIDCounter = 0;	
 
-	this(string host = "localhost", ushort port=50001, ushort maxConnectionsBacklog=4){
+	this(string host = "localhost", ushort port=50002, ushort maxConnectionsBacklog=4){
 		writeln("Starting server...");
 		writeln("Server must be started before clients may join");
 
@@ -169,11 +169,6 @@ class TCPServer{
 			
 			while(messageHistory.length > 0 && mCurrentMessageToSend[client.clientID] <= messageHistory.length-1){
 				ClientMessage msg = messageHistory[mCurrentMessageToSend[client.clientID]];
-
-				if (msg.clientID == client.clientID){
-					mCurrentMessageToSend[client.clientID]++;
-					continue;
-				}
 				
 				writeln("sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(msg));
 				client.socket.send(formatMessage(msg).dup);
