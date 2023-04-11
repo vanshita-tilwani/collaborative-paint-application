@@ -169,11 +169,6 @@ class TCPServer{
 			
 			while(messageHistory.length > 0 && mCurrentMessageToSend[client.clientID] <= messageHistory.length-1){
 				ClientMessage msg = messageHistory[mCurrentMessageToSend[client.clientID]];
-
-				if (msg.clientID == client.clientID){
-					mCurrentMessageToSend[client.clientID]++;
-					continue;
-				}
 				
 				writeln("sending message from client ", msg.clientID, " to client ", client.clientID, " / msg: ", formatMessage(msg));
 				client.socket.send(formatMessage(msg).dup);

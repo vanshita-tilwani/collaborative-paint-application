@@ -58,11 +58,6 @@ class DrawingCanvas : DrawingArea
 
 	drawInstruction[] drawHistory;
 
-
-    // Message history
-    string[] messageHistory;
-
-
     TextView chatHistoryText;
     
 
@@ -87,6 +82,16 @@ class DrawingCanvas : DrawingArea
 		clientSocket = new Socket(AddressFamily.INET, SocketType.STREAM);
 		clientSocket.connect(new InternetAddress(host, port));
 		writeln("Client conncted to server");
+
+		auto myChatWindow = new ScrolledWindow();
+        chatHistoryText = new TextView();
+        chatHistoryText.setEditable(false);
+        myChatWindow.add(chatHistoryText);
+        // auto mychatText = new TextView();
+        // mychatText.getBuffer().setText("Hello");
+        // mychatText.setEditable(true);
+        auto mychatText = new Entry();
+        auto sendChatButton = new SendButton("Send Chat", mychatText, chatHistoryText, clientSocket);
 
 		new Thread({
 			chatMessaging();
@@ -173,8 +178,6 @@ class DrawingCanvas : DrawingArea
 		Button undoButton = new Button("Undo");
 		Button redoButton = new Button("Redo");
         
-        
-
 		myBox.packStart(undoButton,false,false,localPadding);
 		myBox.packStart(redoButton,false,false,localPadding);
 		
@@ -207,20 +210,8 @@ class DrawingCanvas : DrawingArea
         // auto entry = new Entry();
         // entry.addOnKeyRelease(&onKeyRelease);
         // entry.activate();
-        auto myChatWindow = new ScrolledWindow();
-        chatHistoryText = new TextView();
-        foreach(message ; messageHistory){
-            chatHistoryText.appendText(message);
-        }
-        chatHistoryText.setEditable(false);
-        myChatWindow.add(chatHistoryText);
-        // auto mychatText = new TextView();
-        // mychatText.getBuffer().setText("Hello");
-        // mychatText.setEditable(true);
-        auto mychatText = new Entry();
 
-        auto sendChatButton = new SendButton("Send Chat", mychatText, chatHistoryText, messageHistory, clientSocket);
-
+		
         // Timeout sendChatTimeout;
 
 		// redoButton.addOnPressed(delegate void(Button b){
@@ -348,11 +339,12 @@ class DrawingCanvas : DrawingArea
 					undo();
 				else if (startsWith(msg_content, "redo"))
 					redo();
-				else 
+				else{
 					writeln("(from server) ",fromServer);
-                    messageHistory ~= to!string(fromServer);
-                    queueDraw();
+					string toWrite = to!string(fromServer) ~ "\n";
+					chatHistoryText.appendText(toWrite);
                     // chatHistoryText.queueDraw();
+				}
                     
 			}
 		}
@@ -514,23 +506,20 @@ class SendButton : Button
 {
     Entry entry = null;
     TextView textview = null;
-    string[] messageHistory;
     Socket clientSocket;
 
-    this(in string text, Entry ent, TextView tv, string[] mHistory, Socket cSocket){
+    this(in string text, Entry ent, TextView tv, Socket cSocket){
         super(text);
         this.entry = ent;
         this.textview = tv;
-        this.messageHistory = mHistory;
         this.clientSocket = cSocket;
         addOnButtonRelease(&read);
     } 
 
     private bool read(Event event, Widget widget){
+		writeln("writing text right here");
         if(entry.getText){
             clientSocket.send(padMessage(entry.getText()).dup);
-            messageHistory ~= entry.getText();
-            textview.appendText(entry.getText() ~ "\n");
             entry.setText("");
         }
         return true;
