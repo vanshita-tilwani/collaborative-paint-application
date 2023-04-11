@@ -206,26 +206,27 @@ class DrawingCanvas : DrawingArea
         // entry.activate();
         auto myChatWindow = new ScrolledWindow();
         auto chatHistoryText = new TextView();
-        foreach(message ; messageHistory){
-            chatHistoryText.getBuffer().setText(message);
-        }
+        // foreach(message ; messageHistory){
+        //     chatHistoryText.getBuffer().setText(message);
+        // }
         chatHistoryText.setEditable(false);
         myChatWindow.add(chatHistoryText);
-        auto mychatText = new TextView();
-        mychatText.getBuffer().setText("Hello");
-        mychatText.setEditable(true);
+        // auto mychatText = new TextView();
+        // mychatText.getBuffer().setText("Hello");
+        // mychatText.setEditable(true);
+        auto mychatText = new Entry();
 
-        Button sendChatButton = new Button("Send Chat");
+        auto sendChatButton = new SendButton("Send Chat", mychatText, chatHistoryText, messageHistory);
 
-        Timeout sendChatTimeout;
+        // Timeout sendChatTimeout;
 
-		redoButton.addOnPressed(delegate void(Button b){
-			sendChatTimeout = new Timeout(10, &sendChatData, true);
-		});
+		// redoButton.addOnPressed(delegate void(Button b){
+		// 	sendChatTimeout = new Timeout(10, &sendChatData, true);
+		// });
 
-		redoButton.addOnReleased(delegate void(Button b){
-			sendChatTimeout.stop();
-		});
+		// redoButton.addOnReleased(delegate void(Button b){
+		// 	sendChatTimeout.stop();
+		// });
 
         // sendChatButton.addOnButtonPress(&sendChatData);
 
@@ -491,13 +492,37 @@ class DrawingCanvas : DrawingArea
 
     // }
 
-    bool sendChatData(){
+    // bool sendChatData(){
         
-                // messageHistory ~= mychatText.getBuffer().getText();
-                messageHistory ~= "LOL";
-            writeln(messageHistory[0]);
+    //             // messageHistory ~= mychatText.getBuffer().getText();
+    //             messageHistory ~= "LOL";
+    //         writeln(messageHistory[0]);
         
-		return false;
-	}
+	// 	return false;
+	// }
 
+}
+
+class SendButton : Button
+{
+    Entry entry = null;
+    TextView textview = null;
+    string[] messageHistory;
+
+    this(in string text, Entry ent, TextView tv, string[] mHistory){
+        super(text);
+        this.entry = ent;
+        this.textview = tv;
+        this.messageHistory = mHistory;
+        addOnButtonRelease(&read);
+    } 
+
+    private bool read(Event event, Widget widget){
+        if(entry.getText){
+            messageHistory ~= entry.getText();
+            textview.appendText(entry.getText() ~ "\n");
+            entry.setText("");
+        }
+        return true;
+    }
 }
