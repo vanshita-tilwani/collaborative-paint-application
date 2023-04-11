@@ -61,6 +61,9 @@ class DrawingCanvas : DrawingArea
 
     // Message history
     string[] messageHistory;
+
+
+    TextView chatHistoryText;
     
 
 	// Index to which we draw to
@@ -205,7 +208,7 @@ class DrawingCanvas : DrawingArea
         // entry.addOnKeyRelease(&onKeyRelease);
         // entry.activate();
         auto myChatWindow = new ScrolledWindow();
-        auto chatHistoryText = new TextView();
+        chatHistoryText = new TextView();
         // foreach(message ; messageHistory){
         //     chatHistoryText.getBuffer().setText(message);
         // }
@@ -216,7 +219,7 @@ class DrawingCanvas : DrawingArea
         // mychatText.setEditable(true);
         auto mychatText = new Entry();
 
-        auto sendChatButton = new SendButton("Send Chat", mychatText, chatHistoryText, messageHistory);
+        auto sendChatButton = new SendButton("Send Chat", mychatText, chatHistoryText, messageHistory, clientSocket);
 
         // Timeout sendChatTimeout;
 
@@ -347,6 +350,10 @@ class DrawingCanvas : DrawingArea
 					redo();
 				else 
 					writeln("(from server) ",fromServer);
+                    messageHistory ~= to!string(fromServer);
+                    queueDraw();
+                    // chatHistoryText.queueDraw();
+                    
 			}
 		}
 	}
@@ -508,21 +515,39 @@ class SendButton : Button
     Entry entry = null;
     TextView textview = null;
     string[] messageHistory;
+    Socket clientSocket;
 
-    this(in string text, Entry ent, TextView tv, string[] mHistory){
+    this(in string text, Entry ent, TextView tv, string[] mHistory, Socket cSocket){
         super(text);
         this.entry = ent;
         this.textview = tv;
         this.messageHistory = mHistory;
+        this.clientSocket = cSocket;
         addOnButtonRelease(&read);
     } 
 
     private bool read(Event event, Widget widget){
         if(entry.getText){
+            clientSocket.send(padMessage(entry.getText()).dup);
             messageHistory ~= entry.getText();
             textview.appendText(entry.getText() ~ "\n");
             entry.setText("");
         }
         return true;
     }
+
+    // Padding message with dots to be exactly 80 characters
+	// It is crucial for messages sent to the server to be exactly 80 character
+	// so that socket.receive can receive one message at a time
+	private char[80] padMessage(string data){
+		char[80] buffer;
+		char[] temp = data.dup;
+		for (int i = 0; i < 80; i++) {
+			if (i < data.length)
+				buffer[i] = temp[i];
+			else
+				buffer[i] = '.';
+		}
+		return buffer;
+	}
 }
