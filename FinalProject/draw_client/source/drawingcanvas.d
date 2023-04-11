@@ -23,6 +23,10 @@ import gtk.MenuBar;
 import gtk.MenuItem;
 import gtk.Box;
 import gtk.Button;
+import gtk.ScrolledWindow;
+import gtk.TextView;
+import gtk.TextBuffer;
+import gtk.Entry;
 
 import glib.Timeout;
 
@@ -53,6 +57,11 @@ class DrawingCanvas : DrawingArea
 	Socket clientSocket;
 
 	drawInstruction[] drawHistory;
+
+
+    // Message history
+    string[] messageHistory;
+    
 
 	// Index to which we draw to
 	long draw_head;
@@ -154,7 +163,7 @@ class DrawingCanvas : DrawingArea
 		menuBrushSize.append(menuBrush4);
 		menuBrushSizeItem.setSubmenu(menuBrushSize);
 
-        
+        this.setSizeRequest(400, 400);
 		myBox.packStart(menuBar,false,false,0);
         myBox.packStart(this,true,true,localPadding);
 
@@ -188,6 +197,42 @@ class DrawingCanvas : DrawingArea
 		redoButton.addOnReleased(delegate void(Button b){
 			redoTimeout.stop();
 		});
+
+
+        
+        // Chat Box
+        // auto entry = new Entry();
+        // entry.addOnKeyRelease(&onKeyRelease);
+        // entry.activate();
+        auto myChatWindow = new ScrolledWindow();
+        auto chatHistoryText = new TextView();
+        foreach(message ; messageHistory){
+            chatHistoryText.getBuffer().setText(message);
+        }
+        chatHistoryText.setEditable(false);
+        myChatWindow.add(chatHistoryText);
+        auto mychatText = new TextView();
+        mychatText.getBuffer().setText("Hello");
+        mychatText.setEditable(true);
+
+        Button sendChatButton = new Button("Send Chat");
+
+        Timeout sendChatTimeout;
+
+		redoButton.addOnPressed(delegate void(Button b){
+			sendChatTimeout = new Timeout(10, &sendChatData, true);
+		});
+
+		redoButton.addOnReleased(delegate void(Button b){
+			sendChatTimeout.stop();
+		});
+
+        // sendChatButton.addOnButtonPress(&sendChatData);
+
+        // Add chat window
+        myBox.packStart(myChatWindow, true, true, localPadding);
+        myBox.packStart(mychatText, true, true, localPadding);
+        myBox.packStart(sendChatButton,false,false,localPadding);
 
 		window.add(myBox);
 		window.showAll();
@@ -419,4 +464,40 @@ class DrawingCanvas : DrawingArea
 		}
 		return(true);	
 	}
+
+    // public bool onKeyRelease(Event event, Widget widget){
+    //     bool value = false;
+
+	// 	if(event.type == EventType.KEY_RELEASE)
+	// 	{
+	// 		GdkEventKey* enterEvent = event.key;
+	// 		messageHistory ~= "hello";
+    //         queueDraw();
+	// 	}
+    //     return (true);
+    // }
+
+    // public bool sendChatData(Event event, Widget widget){
+    //         bool value = false;
+
+	// 	if(event.type == EventType.BUTTON_PRESS)
+	// 	{
+	// 		GdkEventKey* enterEvent = event.key;
+	// 		messageHistory ~= mychatText.getBuffer().getText();
+    //         writeln(messageHistory[0]);
+    //         queueDraw();
+	// 	}
+    //     return (true);
+
+    // }
+
+    bool sendChatData(){
+        
+                // messageHistory ~= mychatText.getBuffer().getText();
+                messageHistory ~= "LOL";
+            writeln(messageHistory[0]);
+        
+		return false;
+	}
+
 }
