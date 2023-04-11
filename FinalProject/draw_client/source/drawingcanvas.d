@@ -209,9 +209,9 @@ class DrawingCanvas : DrawingArea
         // entry.activate();
         auto myChatWindow = new ScrolledWindow();
         chatHistoryText = new TextView();
-        // foreach(message ; messageHistory){
-        //     chatHistoryText.getBuffer().setText(message);
-        // }
+        foreach(message ; messageHistory){
+            chatHistoryText.appendText(message);
+        }
         chatHistoryText.setEditable(false);
         myChatWindow.add(chatHistoryText);
         // auto mychatText = new TextView();
