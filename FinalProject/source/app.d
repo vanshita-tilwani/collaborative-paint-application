@@ -9,6 +9,7 @@ import gtk.Widget;
 import gdk.Event;
 import gdk.Window;
 import gdk.c.functions;
+import gdk.Keymap;
 
 import cairo.c.types;
 import cairo.c.functions;
@@ -29,13 +30,17 @@ class DrawingCanvas : DrawingArea
 {
 	coords[] draw_coords;	
 	bool drawing = false;
+	Keymap keymap;
 
 	public this()
 	{
+
+		keymap = Keymap.getDefault();
 		addOnDraw(&drawPixels);
 		addOnMotionNotify(&onMouseMotion);
 		addOnButtonPress(&onMousePress);
 		addOnButtonRelease(&onButtonRelease);
+		addOnKeyPress(&onKeyPress);
 	}
 
 	public bool onMouseMotion(Event event, Widget widget) {
@@ -94,6 +99,17 @@ class DrawingCanvas : DrawingArea
 
 		return(true);	
 	}
+
+	public bool onKeyPress(GdkEventKey* eventKey, Widget widget) {
+	string pressedKey;
+	int keys;
+
+	writeln("here");
+		
+	pressedKey = keymap.keyvalName(eventKey.keyval);
+	writeln("The keyval is: ", eventKey.keyval, " which means the ", pressedKey, " was pressed.");
+
+	return(true);}
 }
 
 
