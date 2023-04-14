@@ -62,10 +62,10 @@ class DrawingCanvas : DrawingArea
 	bool drawing = false;
 	
 	// color
-	static double r = 255.1;
-	static double g = 0.1;
-	static double b = 0.1;
-	static double a = 1.1;
+	static double r = 153;
+	static double g = 193;
+	static double b = 241;
+	static double a = 255;
 
 	// brush size
 	int brush_size = 2;
