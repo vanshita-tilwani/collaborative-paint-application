@@ -37,6 +37,9 @@ jobs:
         run: sudo apt-get install -y libgtk-3-0
       - name: build and run tests of project code
         run: cd ./FinalProject/draw_client && dub test 
+
+      - name: build and run tests of project code
+        run: cd ./FinalProject/draw_server && dub test
       # These next two steps need a little bit more explaining, because as we are finding out
       # testing graphics applications is really hard!
       # You learned this when you wrote your GUI applications tests earlier.
