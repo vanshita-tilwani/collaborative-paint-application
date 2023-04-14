@@ -44,17 +44,8 @@ import cairo.ImageSurface;
 import colorchooser;
 import gtk.Dialog;
 import gdk.RGBA;
-
+import utility;
 import drawinstruction : drawInstruction;
-// struct drawInstruction {
-// 	double x;
-// 	double y;
-// 	double r;
-// 	double g;
-// 	double b;
-// 	double a;
-// 	int brush_size;
-// }
 
 class DrawingCanvas : DrawingArea
 {
@@ -249,7 +240,7 @@ class DrawingCanvas : DrawingArea
 
 	bool undoAndSend(){
 		if (undo()){
-			clientSocket.send(padMessage("undo"));
+			clientSocket.send(Utility.padMessage("undo"));
 			return true;
 		}
 		return false;
@@ -257,7 +248,7 @@ class DrawingCanvas : DrawingArea
 	
 	bool redoAndSend(){
 		if (redo()){
-			clientSocket.send(padMessage("redo"));
+			clientSocket.send(Utility.padMessage("redo"));
 			return true;
 		}
 		return false;
@@ -268,7 +259,7 @@ class DrawingCanvas : DrawingArea
 		
 		while(clientRunning){
 			foreach(line; stdin.byLine){
-				clientSocket.send(padMessage(line.dup).dup);
+				clientSocket.send(Utility.padMessage(line.dup).dup);
 			}
 		}
 	}
@@ -276,25 +267,6 @@ class DrawingCanvas : DrawingArea
 	void printDrawHead(){
 		writeln("(debug) Draw head at ", draw_head, "/", drawHistory.length);
 	}
-
-	// Message format: drw x,y r,g,b,a 
-	drawInstruction parseDrawInstruction(string draw_args){
-		auto match = matchFirst(draw_args, r"drw (\d+),(\d+) (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+) ");
-
-		if (match.empty()) {
-			return drawInstruction(0,0); // this should trigger an exception
-		}
-		else {
-			return drawInstruction(to!double(match[1]),
-								   to!double(match[2]),
-								   to!double(match[3]),
-								   to!double(match[4]),
-								   to!double(match[5]),
-								   to!double(match[6]),
-								   to!int(match[7]));
-		}
-	}
-
 
 	void receiveDataFromServer(){
 		while(true){	
@@ -309,7 +281,7 @@ class DrawingCanvas : DrawingArea
 				if (startsWith(msg_content, "drw")) {
 					draw_head++;
 					drawHistory = drawHistory[0 .. draw_head - 1];
-					drawHistory ~= [parseDrawInstruction(msg_content)];
+					drawHistory ~= [Utility.parseDrawInstruction(msg_content)];
 					queueDraw();
 				}
 				else if (startsWith(msg_content, "hello") && to!int(match[1]) == -1) {
@@ -340,20 +312,6 @@ class DrawingCanvas : DrawingArea
 		exit(0);
 	}
 
-	// Padding message with dots to be exactly 80 characters
-	// It is crucial for messages sent to the server to be exactly 80 character
-	// so that socket.receive can receive one message at a time
-	char[80] padMessage(string data){
-		char[80] buffer;
-		char[] temp = data.dup;
-		for (int i = 0; i < 80; i++) {
-			if (i < data.length)
-				buffer[i] = temp[i];
-			else
-				buffer[i] = '.';
-		}
-		return buffer;
-	}
 
 	// GTK Input Event handling //
 	public bool onMouseMotion(Event event, Widget widget) {
@@ -380,7 +338,7 @@ class DrawingCanvas : DrawingArea
 							  ~ ", " ~ to!string(b)
 							  ~ ", " ~ to!string(a)
 							  ~ ", " ~ to!string(brush_size) ~ " ";
-			clientSocket.send(padMessage(data));
+			clientSocket.send(Utility.padMessage(data));
 			value = true;
 		}
 
@@ -410,7 +368,7 @@ class DrawingCanvas : DrawingArea
 							  ~ ", " ~ to!string(b)
 							  ~ ", " ~ to!string(a)
 							  ~ ", " ~ to!string(brush_size) ~ " ";
-			clientSocket.send(padMessage(data));
+			clientSocket.send(Utility.padMessage(data));
 			value = true;
 			drawing = true;
 		}
@@ -503,24 +461,9 @@ class SendButton : Button
     private bool read(Event event, Widget widget){
 		writeln("writing text right here");
         if(entry.getText){
-            clientSocket.send(padMessage(entry.getText()).dup);
+            clientSocket.send(Utility.padMessage(entry.getText()).dup);
             entry.setText("");
         }
         return true;
     }
-
-    // Padding message with dots to be exactly 80 characters
-	// It is crucial for messages sent to the server to be exactly 80 character
-	// so that socket.receive can receive one message at a time
-	private char[80] padMessage(string data){
-		char[80] buffer;
-		char[] temp = data.dup;
-		for (int i = 0; i < 80; i++) {
-			if (i < data.length)
-				buffer[i] = temp[i];
-			else
-				buffer[i] = '.';
-		}
-		return buffer;
-	}
 }
