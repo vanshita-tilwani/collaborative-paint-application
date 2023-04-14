@@ -26,6 +26,7 @@ import gtk.Button;
 import gtk.ScrolledWindow;
 import gtk.TextView;
 import gtk.TextBuffer;
+import gtk.ColorChooserDialog;
 import gtk.Entry;
 
 import glib.Timeout;
@@ -40,6 +41,9 @@ import cairo.c.functions;
 import cairo.Context;
 import cairo.Surface;
 import cairo.ImageSurface;
+import colorchooser;
+import gtk.Dialog;
+import gdk.RGBA;
 
 import drawinstruction : drawInstruction;
 // struct drawInstruction {
@@ -67,16 +71,18 @@ class DrawingCanvas : DrawingArea
 	bool drawing = false;
 	
 	// color
-	double r = 255.1;
-	double g = 0.1;
-	double b = 0.1;
-	double a = 1.1;
+	static double r = 255.1;
+	static double g = 0.1;
+	static double b = 0.1;
+	static double a = 1.1;
 
 	// brush size
 	int brush_size = 2;
+	DrawingCanvas canvas;
 
 	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50002)
 	{
+		canvas = this;
 		// Socket setup
 		writeln("Starting client...attempt to create socket");
 		clientSocket = new Socket(AddressFamily.INET, SocketType.STREAM);
@@ -104,7 +110,7 @@ class DrawingCanvas : DrawingArea
 		// Box
 		const int globalPadding=2;
         const int localPadding= 5;
-        auto myBox = new Box(Orientation.VERTICAL,globalPadding);
+        auto myBox = new Box(Orientation.VERTICAL, globalPadding);
 		
 
 		// Menubar
@@ -117,40 +123,13 @@ class DrawingCanvas : DrawingArea
 		
 		// Color submenu
 		auto menuColor = new Menu;
-		auto menuRed = new MenuItem("Red"); 
-		auto menuGreen = new MenuItem("Green"); 
-		auto menuBlue = new MenuItem("Blue"); 
-		auto menuBlack = new MenuItem("Black"); 
+		auto menuColorPicker = new MenuItem("Pick Color");
 
-		menuRed.addOnActivate(delegate void (MenuItem m){
-				r = 255.1;
-				g = 0.1;
-				b = 0.1;
-				a = 1.1;
-			});
-		menuGreen.addOnActivate(delegate void (MenuItem m){
-				r = 0.1;
-				g = 255.1;
-				b = 0.1;
-				a = 1.1;
-			});
-		menuBlue.addOnActivate(delegate void (MenuItem m){
-				r = 0.1;
-				g = 0.1;
-				b = 255.1;
-				a = 1.1;
-			});
-		menuBlack.addOnActivate(delegate void (MenuItem m){
-				r = 0.1;
-				g = 0.1;
-				b = 0.1;
-				a = 1.1;
-			});
+		menuColorPicker.addOnActivate(delegate void (MenuItem m){
+			auto colorPickerDialog = new MyColorChooserDialog(window, canvas);
+		});
 		
-		menuColor.append(menuRed);
-		menuColor.append(menuGreen);
-		menuColor.append(menuBlue);
-		menuColor.append(menuBlack);
+		menuColor.append(menuColorPicker);
 		menuColorItem.setSubmenu(menuColor);
 
 		// Brush size submenu
@@ -240,6 +219,10 @@ class DrawingCanvas : DrawingArea
 		addOnMotionNotify(&onMouseMotion);
 		addOnButtonPress(&onMousePress);
 		addOnButtonRelease(&onButtonRelease);
+	}
+
+	void changeColor() {
+
 	}
 
 	~this(){
@@ -456,10 +439,10 @@ class DrawingCanvas : DrawingArea
 			if (i == draw_head)
 				break;
 			cr.setLineWidth(drawInstruction.brush_size);
-			cr.setSourceRgba(drawInstruction.r, 
-							 drawInstruction.g, 
-							 drawInstruction.b, 
-							 drawInstruction.a);
+			cr.setSourceRgba(drawInstruction.r/255.0,
+							 drawInstruction.g/255.0,
+							 drawInstruction.b/255.0,
+							 drawInstruction.a/255.0);
 			cr.rectangle(drawInstruction.x, drawInstruction.y, 1, 1);
 			cr.stroke();
 		}
