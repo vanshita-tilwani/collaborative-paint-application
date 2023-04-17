@@ -12,6 +12,10 @@ import core.thread.osthread;
 import clientprofile : ClientProfile;
 import clientmessage : ClientMessage;
 
+/**
+Class responsible for maintainin the connection between client and server and command
+exchange between server and client.
+*/
 class TCPServer{
 	Socket serverSocket;
 
@@ -41,8 +45,10 @@ class TCPServer{
 		serverSocket.close();
 	}
 
-	/// Call this after the server has been created
-	/// to start running the server
+	/**
+	Method to sync the commands with the client
+	NOTE : Call this after the server has been created
+	*/
 	void run(){		  
 
 		while(true){

@@ -12,6 +12,9 @@ import clientmessage : ClientMessage;
 import tcpserver;
 
 // Entry point to Server
+/**
+Entry point to the server side of the application.
+*/
 void main(){
 
 	TCPServer server = new TCPServer();
