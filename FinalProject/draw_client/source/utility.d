@@ -3,6 +3,7 @@ module utility;
 import drawinstruction : drawInstruction;
 import std.regex;
 import std.conv;
+import std.stdio;
 
 class Utility
 {
@@ -26,7 +27,9 @@ class Utility
 		auto match = matchFirst(draw_args, r"drw (\d+),(\d+) (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+) ");
 
 		if (match.empty()) {
-			return drawInstruction(0,0); // this should trigger an exception
+			// this should trigger an exception
+			throw new Exception("Illegal Argument");
+
 		}
 		else {
 			return drawInstruction(to!double(match[1]),
