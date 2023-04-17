@@ -10,17 +10,7 @@ import std.string;
 import core.thread.osthread;
 
 import clientprofile : ClientProfile;
-// struct ClientProfile { 
-// 	Socket socket;
-// 	int clientID;
-// 	bool alive;
-// }
 import clientmessage : ClientMessage;
-// struct ClientMessage {
-// 	int clientID;
-// 	int length;
-// 	char[80] data;
-// }
 
 class TCPServer{
 	Socket serverSocket;
@@ -94,11 +84,15 @@ class TCPServer{
 		}
 	}
 
-	// Function to spawn from a new thread for the client.
-	// The purpose is to listen for data sent from the client
-	// and then rebroadcast that information to all other clients.
-	// NOTE: passing 'clientSocket' by value so it should be a copy of
-	//       the connection.
+
+
+	/**
+	Function to spawn from a new thread for the client.
+	The purpose is to listen for data sent from the client
+	and then rebroadcast that information to all other clients.
+
+	NOTE: passing 'clientSocket' by value so it should be a copy of the connection.
+	*/
 	void clientLoop(ClientProfile client){
 		writeln("\t Starting clientLoop:(me)",client.socket.localAddress(),
 		"<---->",client.socket.remoteAddress(),"(client)");
@@ -156,12 +150,11 @@ class TCPServer{
 
 	}
 
-	string formatMessage(ClientMessage msg) {
-		string prefix = "client " ~ to!string(msg.clientID) ~ ": ";
-		char[] toSend = prefix.dup ~ msg.data[0 .. msg.length];
-		return toSend.idup();
-	}
 
+
+	/**
+	To broadcast the data to all the connected clients.
+	*/
 	void broadcastToAllClients(){
 		foreach(client; clientProfiles){
 			if (client.alive == false)
@@ -188,6 +181,12 @@ class TCPServer{
 				mCurrentDrawToSend[client.clientID]++;
 			}
 		}
+	}
+
+	private string formatMessage(ClientMessage msg) {
+		string prefix = "client " ~ to!string(msg.clientID) ~ ": ";
+		char[] toSend = prefix.dup ~ msg.data[0 .. msg.length];
+		return toSend.idup();
 	}
 
 
