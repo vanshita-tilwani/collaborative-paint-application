@@ -3,7 +3,6 @@ module utility;
 import drawinstruction : drawInstruction;
 import std.regex;
 import std.conv;
-import std.stdio;
 
 class Utility
 {
