@@ -88,6 +88,7 @@ class DrawingCanvas : DrawingArea
         // mychatText.getBuffer().setText("Hello");
         // mychatText.setEditable(true);
         auto mychatText = new Entry();
+		mychatText.setPlaceholderText("Type here and press `Send Chat`");
         auto sendChatButton = new SendButton("Send Chat", mychatText, chatHistoryText, clientSocket);
 
 		new Thread({
