@@ -209,6 +209,10 @@ class DrawingCanvas : DrawingArea
 	}
 
 	bool undo(){
+		debug {
+			writeln("undoing change made on all connected clients ");
+		}
+		
 		if (draw_head > 0){
 			draw_head--;
 			queueDraw();
@@ -221,6 +225,10 @@ class DrawingCanvas : DrawingArea
 	Method responsible for redo operation.
 	*/
 	bool redo(){
+		debug {
+			writeln("redoing change made on all connected clients ");
+		}
+		
 		if (draw_head < drawHistory.length){
 			draw_head++;
 			queueDraw();
@@ -255,6 +263,7 @@ class DrawingCanvas : DrawingArea
 	Method responsible for sending chat messages.
 	*/
 	void chatMessaging(){
+		writeln("Chat feature for canvas on new thread");
 		bool clientRunning=true;
 		
 		while(clientRunning){
@@ -265,7 +274,9 @@ class DrawingCanvas : DrawingArea
 	}
 
 	void printDrawHead(){
-		writeln("(debug) Draw head at ", draw_head, "/", drawHistory.length);
+		debug {
+			writeln("Draw head at ", draw_head, "/", drawHistory.length);
+		}
 	}
 
 	/**
@@ -274,6 +285,9 @@ class DrawingCanvas : DrawingArea
 	chatting)
 	*/
 	void receiveDataFromServer(){
+		debug {
+			writeln("Recieve data for canvas from server using a new thread");
+		}
 		while(true){	
 			char[90] buffer;
 			auto got = clientSocket.receive(buffer);
@@ -290,15 +304,25 @@ class DrawingCanvas : DrawingArea
 					queueDraw();
 				}
 				else if (startsWith(msg_content, "hello") && to!int(match[1]) == -1) {
-					writeln("(debug) syncing draw head with server, ");
+					debug {
+						writeln("syncing draw head with server, ");
+					}
 					auto matchHelloMsg = matchFirst(msg_content, r"hello (\d+) ");
 					draw_head = to!long(matchHelloMsg[1]);
 					queueDraw();
 				}
-				else if (startsWith(msg_content, "undo"))
+				else if (startsWith(msg_content, "undo")) {
+					debug {
+						writeln("undo action and sync with all connected clients ");
+					}
 					undo();
-				else if (startsWith(msg_content, "redo"))
+				}
+				else if (startsWith(msg_content, "redo")){
+					debug {
+						writeln("redo action and sync with all connected clients");
+					}
 					redo();
+				}	
 				else{
 					writeln("(from server) ",fromServer);
 					string toWrite = to!string(fromServer) ~ "\n";
@@ -309,6 +333,9 @@ class DrawingCanvas : DrawingArea
 						if (ch != '.') {
 							chatMessage ~= ch;
 						}
+					}
+					debug {
+						writeln("add message from client to chat history ");
 					}
 					chatHistoryText.appendText(chatMessage);
                     // chatHistoryText.queueDraw();
@@ -403,6 +430,9 @@ class DrawingCanvas : DrawingArea
 	*/
 	public bool onButtonRelease(Event event, Widget widget)
 	{
+		debug {
+			writeln("Stop drawing on canvas ");
+		}
 		bool value = false;
 
 		if(event.type == EventType.BUTTON_RELEASE)
@@ -451,7 +481,11 @@ class SendButton : Button
     } 
 
     private bool read(Event event, Widget widget){
-		writeln("writing text right here");
+
+		debug {
+			writeln("writing text right here"); 
+		}
+		
         if(entry.getText){
             clientSocket.send(Utility.padMessage(entry.getText()).dup);
             entry.setText("");
