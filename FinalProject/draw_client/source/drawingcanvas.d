@@ -47,6 +47,11 @@ import gdk.RGBA;
 import utility;
 import drawinstruction : drawInstruction;
 
+/***
+ Drawing Canvas class which is responsible for all the actions ( draw,
+ undo, redo, chat) available on the canvas.
+*/
+
 class DrawingCanvas : DrawingArea
 {
 	Socket clientSocket;
@@ -71,6 +76,10 @@ class DrawingCanvas : DrawingArea
 	int brush_size = 2;
 	DrawingCanvas canvas;
 
+	/**
+	Public constructor of the class responsible for connecting client to server along with setting the
+	widgets for draw, undo, redo, chat, etc on the Canvas.
+	*/
 	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50002)
 	{
 		canvas = this;
@@ -84,9 +93,6 @@ class DrawingCanvas : DrawingArea
         chatHistoryText = new TextView();
         chatHistoryText.setEditable(false);
         myChatWindow.add(chatHistoryText);
-        // auto mychatText = new TextView();
-        // mychatText.getBuffer().setText("Hello");
-        // mychatText.setEditable(true);
         auto mychatText = new Entry();
 		mychatText.setPlaceholderText("Type here and press `Send Chat`");
         auto sendChatButton = new SendButton("Send Chat", mychatText, chatHistoryText, clientSocket);
@@ -176,25 +182,6 @@ class DrawingCanvas : DrawingArea
 		});
 
 
-        
-        // Chat Box
-        // auto entry = new Entry();
-        // entry.addOnKeyRelease(&onKeyRelease);
-        // entry.activate();
-
-		
-        // Timeout sendChatTimeout;
-
-		// redoButton.addOnPressed(delegate void(Button b){
-		// 	sendChatTimeout = new Timeout(10, &sendChatData, true);
-		// });
-
-		// redoButton.addOnReleased(delegate void(Button b){
-		// 	sendChatTimeout.stop();
-		// });
-
-        // sendChatButton.addOnButtonPress(&sendChatData);
-
         // Add chat window
         myBox.packStart(myChatWindow, true, true, localPadding);
         myBox.packStart(mychatText, true, true, localPadding);
@@ -234,6 +221,9 @@ class DrawingCanvas : DrawingArea
 		return false;
 	}
 
+	/****
+	Method responsible for redo operation.
+	*/
 	bool redo(){
 		debug {
 			writeln("redoing change made on all connected clients ");
@@ -247,6 +237,9 @@ class DrawingCanvas : DrawingArea
 		return false;
 	}
 
+	/****
+	Method responsible for undo operation and sending the data.
+	*/
 	bool undoAndSend(){
 		if (undo()){
 			clientSocket.send(Utility.padMessage("undo"));
@@ -254,7 +247,10 @@ class DrawingCanvas : DrawingArea
 		}
 		return false;
 	}
-	
+
+	/****
+	Method responsible for redo operation and sending the data.
+	*/
 	bool redoAndSend(){
 		if (redo()){
 			clientSocket.send(Utility.padMessage("redo"));
@@ -263,6 +259,9 @@ class DrawingCanvas : DrawingArea
 		return false;
 	}
 
+	/****
+	Method responsible for sending chat messages.
+	*/
 	void chatMessaging(){
 		writeln("Chat feature for canvas on new thread");
 		bool clientRunning=true;
@@ -280,6 +279,11 @@ class DrawingCanvas : DrawingArea
 		}
 	}
 
+	/**
+	Method responsible for receiving data from the server and accordingly
+	parsing it and taking actions ( such as drawing on the canvas, undo, redo,
+	chatting)
+	*/
 	void receiveDataFromServer(){
 		debug {
 			writeln("Recieve data for canvas from server using a new thread");
@@ -341,7 +345,10 @@ class DrawingCanvas : DrawingArea
 		}
 	}
 
-	// SHUTDOWN procedure
+
+	/**
+	Method responsible for application shutdown
+	*/
 	public void onWindowClose(GioApplication app) {
 		clientSocket.close();
 		writeln("dlang mafia collaborative paint app shutting down");
@@ -349,7 +356,9 @@ class DrawingCanvas : DrawingArea
 	}
 
 
-	// GTK Input Event handling //
+	/**
+	Method responsible for handling GTK input events
+	*/
 	public bool onMouseMotion(Event event, Widget widget) {
 		bool value = false;
 
@@ -381,6 +390,9 @@ class DrawingCanvas : DrawingArea
 		return(value);
 	}
 
+	/**
+	Method responsible for handling mouse press event
+	*/
 	public bool onMousePress(Event event, Widget widget) {
 		bool value = false;
 		
@@ -389,7 +401,8 @@ class DrawingCanvas : DrawingArea
 			GdkEventButton* mouseEvent = event.button;
 
 			draw_head++;
-			drawHistory = drawHistory[0 .. draw_head - 1]; // Cut the history to draw head to dissallow redo if someone draws
+			// Cut the history to draw head to dissallow redo if someone draws
+			drawHistory = drawHistory[0 .. draw_head - 1];
 			drawHistory ~= [drawInstruction(mouseEvent.x, 
 											mouseEvent.y,
 											r,g,b,a, 
@@ -412,6 +425,9 @@ class DrawingCanvas : DrawingArea
 		return(value);
 	}
 
+	/**
+	Method responsible for handling button release event
+	*/
 	public bool onButtonRelease(Event event, Widget widget)
 	{
 		debug {
@@ -429,7 +445,10 @@ class DrawingCanvas : DrawingArea
 		return(value);
 	}
 
-	// GTK Drawing //
+
+	/**
+	Method responsible for drawing on the canvas
+	*/
 	public bool drawPixels(Scoped!Context cr, Widget widget) {
 		printDrawHead();
 		foreach (i, drawInstruction; drawHistory) {
@@ -445,42 +464,6 @@ class DrawingCanvas : DrawingArea
 		}
 		return(true);	
 	}
-
-    // public bool onKeyRelease(Event event, Widget widget){
-    //     bool value = false;
-
-	// 	if(event.type == EventType.KEY_RELEASE)
-	// 	{
-	// 		GdkEventKey* enterEvent = event.key;
-	// 		messageHistory ~= "hello";
-    //         queueDraw();
-	// 	}
-    //     return (true);
-    // }
-
-    // public bool sendChatData(Event event, Widget widget){
-    //         bool value = false;
-
-	// 	if(event.type == EventType.BUTTON_PRESS)
-	// 	{
-	// 		GdkEventKey* enterEvent = event.key;
-	// 		messageHistory ~= mychatText.getBuffer().getText();
-    //         writeln(messageHistory[0]);
-    //         queueDraw();
-	// 	}
-    //     return (true);
-
-    // }
-
-    // bool sendChatData(){
-        
-    //             // messageHistory ~= mychatText.getBuffer().getText();
-    //             messageHistory ~= "LOL";
-    //         writeln(messageHistory[0]);
-        
-	// 	return false;
-	// }
-
 }
 
 class SendButton : Button
