@@ -222,6 +222,7 @@ class DrawingCanvas : DrawingArea
 	}
 
 	bool undo(){
+		writeln("(debug) undoing change made on all connected clients ");
 		if (draw_head > 0){
 			draw_head--;
 			queueDraw();
@@ -231,6 +232,7 @@ class DrawingCanvas : DrawingArea
 	}
 
 	bool redo(){
+		writeln("(debug) redoing change made on all connected clients ");
 		if (draw_head < drawHistory.length){
 			draw_head++;
 			queueDraw();
@@ -256,6 +258,7 @@ class DrawingCanvas : DrawingArea
 	}
 
 	void chatMessaging(){
+		writeln("Chat feature for canvas on new thread");
 		bool clientRunning=true;
 		
 		while(clientRunning){
@@ -270,6 +273,7 @@ class DrawingCanvas : DrawingArea
 	}
 
 	void receiveDataFromServer(){
+		writeln("(debug) Recieve data for canvas from server using a new thread");
 		while(true){	
 			char[90] buffer;
 			auto got = clientSocket.receive(buffer);
@@ -291,10 +295,14 @@ class DrawingCanvas : DrawingArea
 					draw_head = to!long(matchHelloMsg[1]);
 					queueDraw();
 				}
-				else if (startsWith(msg_content, "undo"))
+				else if (startsWith(msg_content, "undo")) {
+					writeln("(debug) undo action and sync with all connected clients ");
 					undo();
-				else if (startsWith(msg_content, "redo"))
+				}
+				else if (startsWith(msg_content, "redo")){
+					writeln("(debug) redo action and sync with all connected clients");
 					redo();
+				}	
 				else{
 					writeln("(from server) ",fromServer);
 					string toWrite = to!string(fromServer) ~ "\n";
@@ -306,6 +314,7 @@ class DrawingCanvas : DrawingArea
 							chatMessage ~= ch;
 						}
 					}
+					writeln("(debug) add message from client to chat history ");
 					chatHistoryText.appendText(chatMessage);
                     // chatHistoryText.queueDraw();
 				}
@@ -355,6 +364,7 @@ class DrawingCanvas : DrawingArea
 	}
 
 	public bool onMousePress(Event event, Widget widget) {
+		writeln("(debug) add pixel clicked, RGB combination and brush size to drawing instructions");
 		bool value = false;
 		
 		if(event.type == EventType.BUTTON_PRESS)
@@ -387,6 +397,7 @@ class DrawingCanvas : DrawingArea
 
 	public bool onButtonRelease(Event event, Widget widget)
 	{
+		writeln("(debug) Stop drawing on canvas ");
 		bool value = false;
 
 		if(event.type == EventType.BUTTON_RELEASE)
@@ -401,6 +412,7 @@ class DrawingCanvas : DrawingArea
 
 	// GTK Drawing //
 	public bool drawPixels(Scoped!Context cr, Widget widget) {
+		writeln("(debug) draw on canvas according to the drawing instrctions saved");
 		printDrawHead();
 		foreach (i, drawInstruction; drawHistory) {
 			if (i == draw_head)

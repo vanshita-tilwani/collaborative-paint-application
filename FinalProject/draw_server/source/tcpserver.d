@@ -121,6 +121,7 @@ class TCPServer{
 			}
 
 			if (buffer[0 .. 3] == "drw"){
+				writeln("(debug) Server recieves draw command");
 				draw_head++;
 				drawHistory = drawHistory[0 .. draw_head - 1];
 				drawHistory ~= ClientMessage(client.clientID, to!int(got), buffer); 	
@@ -130,6 +131,7 @@ class TCPServer{
 				}
 			}
 			else if (buffer[0 .. 4] == "undo"){
+				writeln("(debug) Server recieves undo command");
 				draw_head--;
 				foreach(temp_client;clientProfiles) {
 					if (temp_client == client) 
@@ -139,6 +141,7 @@ class TCPServer{
 				}
 			}
 			else if (buffer[0 .. 4] == "redo") {
+				writeln("(debug) Server recieves redo command");
 				draw_head++;
 				foreach(temp_client;clientProfiles) {
 					if (temp_client == client) 
@@ -163,6 +166,7 @@ class TCPServer{
 	}
 
 	void broadcastToAllClients(){
+		writeln("(debug) Server broadcasting the updated canvas to all clients");
 		foreach(client; clientProfiles){
 			if (client.alive == false)
 				continue;
