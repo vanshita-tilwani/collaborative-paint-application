@@ -6,6 +6,7 @@ and paint simulataneously. Clients can additional chat with each other
 - dub
 - Gtkd
 - unit-threaded
+- docker
 
 ## Installation
 Installation depends on the setup of your development environment. We have built the app using **macOS**.
@@ -23,16 +24,17 @@ You can see a canvas come up and use the features of the canvas. You can run mul
 Please look at the Milestone-10 video link to better understand the app features.
 
 ## Continuous Integration and Documentation
-You can find the documentation for the code in the /docs folder inside both the client and the server projects.
-Continuous Integration is set locally (due to limit on github). You can run it using "sudo ./act" from the root folder.
+
+- You can find the documentation for the code in the /docs folder inside both the client and the server projects.
+- Continuous Integration is set locally (due to limit on github). You can run it using "sudo ./act" from the root folder. (docker required)
 
 
 ## Application Features
 -	The extra feature that we have included is the ability to chat with other clients.
--	4 sizes of brush strokes
--	Color picker for choosing the brush strokes
+-	4 sizes of brush strokes.
+-	Color picker for choosing the brush strokes.
 
 
 ## Future Scope
 -	Include the logic for erasing the canvas strokes.
--	Add ability to add multiple shapes
+-	Ability to add multiple shapes.
