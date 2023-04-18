@@ -302,7 +302,15 @@ class DrawingCanvas : DrawingArea
 				else{
 					writeln("(from server) ",fromServer);
 					string toWrite = to!string(fromServer) ~ "\n";
-					chatHistoryText.appendText(toWrite);
+					string chatMessage = "";
+
+					foreach (ch; toWrite)
+					{
+						if (ch != '.') {
+							chatMessage ~= ch;
+						}
+					}
+					chatHistoryText.appendText(chatMessage);
                     // chatHistoryText.queueDraw();
 				}
                     
