@@ -7,6 +7,10 @@ import std.conv;
 import drawinstruction : drawInstruction;
 import core.exception : AssertError;
 import std.exception;
+
+/**
+unit test for checking socket creation
+*/
 @("unit test for checking socket creation")
 unittest{
     Socket serverSocket;
@@ -19,6 +23,9 @@ unittest{
     serverSocket.close();
 }
 
+/**
+unit test for checking socket closure
+*/
 @("unit test for checking socket closure")
 unittest{
     Socket serverSocket;
@@ -31,6 +38,9 @@ unittest{
     assert(isAlive == false);
 }
 
+/**
+unit test for utility method for undo command
+*/
 @("unit test for utility method for undo command")
 unittest {
     string message = "undo";
@@ -39,6 +49,9 @@ unittest {
     assert(result == "undo............................................................................");
 }
 
+/**
+unit test for utility method for redo command
+*/
 @("unit test for utility method for redo command")
 unittest {
     string message = "redo";
@@ -47,6 +60,9 @@ unittest {
     assert(result == "redo............................................................................");
 }
 
+/**
+unit test for strings > 80 length
+*/
 @("unit test for strings > 80 length")
 unittest {
     string message = "Hi, how are you doing. I hope it is going well for you. I hope to see you very soon.";
@@ -55,6 +71,9 @@ unittest {
     assert(result == "Hi, how are you doing. I hope it is going well for you. I hope to see you very s");
 }
 
+/**
+unit test for strings = 80 length
+*/
 @("unit test for strings = 80 length")
 unittest {
     string message = "Hi, how are you doing. I hope it is going well for you. I hope to see you sooonn";
@@ -63,12 +82,18 @@ unittest {
     assert(result == "Hi, how are you doing. I hope it is going well for you. I hope to see you sooonn");
 }
 
-@("utility method for draw instructions")
+/**
+utility method for parsing draw instructions
+*/
+@("utility method for parsing draw instructions")
 unittest {
     assertThrown!Exception(Utility.parseDrawInstruction("undo"));
 }
 
-@("utility method for draw instructions for brush size = 2")
+/**
+utility method for parsing draw instructions for brush size = 2
+*/
+@("utility method for parsing draw instructions for brush size = 2")
 unittest {
     auto instructions = Utility.parseDrawInstruction("drw 296,98 153, 193, 241, 255, 2 ...............................................");
     assert(instructions.x == 296.0);
@@ -81,6 +106,9 @@ unittest {
 }
 
 
+/**
+utility method for parsing draw instructions for brush size = 3
+*/
 @("utility method for draw instructions for brush size = 3")
 unittest {
     auto instructions = Utility.parseDrawInstruction("drw 198,98 153, 193, 241, 255, 3 ...............................................");
@@ -93,6 +121,9 @@ unittest {
     assert(instructions.brush_size == 3);
 }
 
+/**
+utility method for parsing draw instructions for brush size = 4
+*/
 @("utility method for draw instructions for brush size = 4")
 unittest {
     auto instructions = Utility.parseDrawInstruction("drw 198,98 153, 193, 241, 255, 4 ...............................................");

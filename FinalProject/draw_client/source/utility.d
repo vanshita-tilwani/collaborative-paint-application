@@ -4,11 +4,18 @@ import drawinstruction : drawInstruction;
 import std.regex;
 import std.conv;
 
+/**
+Utility class which contains utility methods used across the application.
+*/
 class Utility
 {
-	// Padding message with dots to be exactly 80 characters
-	// It is crucial for messages sent to the server to be exactly 80 character
-	// so that socket.receive can receive one message at a time
+
+
+	/**
+	Padding message with dots to be exactly 80 characters
+	It is crucial for messages sent to the server to be exactly 80 character
+	so that socket.receive can receive one message at a time
+	*/
 	public static char[80] padMessage(string data){
 		char[80] buffer;
 		char[] temp = data.dup;
@@ -21,7 +28,9 @@ class Utility
 		return buffer;
 	}
 
-	// Message format: drw x,y r,g,b,a
+	/**
+	To parse draw instructions recieved from the server into drawInstruction
+	*/
 	public static drawInstruction parseDrawInstruction(string draw_args){
 		auto match = matchFirst(draw_args, r"drw (\d+),(\d+) (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+.\d*), (\d+) ");
 

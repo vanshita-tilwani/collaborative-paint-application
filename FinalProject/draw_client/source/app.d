@@ -9,10 +9,10 @@ import std;
 int main(string[] args){
 	Application application;
 
-	 write("Please input a server ip address for the client to connect to: ");
-	 string host = readln().chomp;
-	 write("Please input a port number for the client to connect to: ");
-	 ushort port = to!ushort(readln().chomp);
+	write("Please input a server ip address for the client to connect to: ");
+	string host = readln().chomp;
+	write("Please input a port number for the client to connect to: ");
+	ushort port = to!ushort(readln().chomp);
 
 	void activateCanvas(GioApplication app)
 	{
