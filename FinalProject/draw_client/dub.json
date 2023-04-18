@@ -1,8 +1,8 @@
 {
 	"authors": [
-		"Soufiane Jounaid"
+		"Team Dlang Mafia"
 	],
-	"copyright": "Copyright © 2023, Soufiane Jounaid",
+	"copyright": "Copyright © 2023, Team Dlang Mafia",
 	"targetType": "executable",
 	"configurations":[
         {"name":"executable"      },
@@ -20,7 +20,7 @@
 		"gtk-d": "~>3.10.0",
 		"unit-threaded": "~>2.1.5"
 	},
-	"description": "A minimal D application.",
+	"description": "A collaborative paint application that allows multiple clients to draw at the same time connecting to a server using TCP.",
 	"license": "proprietary",
 	"name": "collaborative-paint-client"
 }
