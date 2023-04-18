@@ -16,4 +16,4 @@ dlang-mafia-collab-paint-test-*
 *.lst
 /.idea/
 /draw_client/collaborative-paint-client 
-/draw_server/collaborative-paint-servers 
+/draw_server/collaborative-paint-server
