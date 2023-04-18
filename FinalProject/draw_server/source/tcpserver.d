@@ -111,7 +111,9 @@ class TCPServer{
 			// Server is now waiting to handle data from specific client
 			// We'll block the server awaiting to receive a message.
 			auto got = client.socket.receive(buffer);
-			writeln("(debug) receiving from client ", client.clientID, ", msg: ", buffer[0 .. got]);
+			debug {
+				writeln("receiving from client ", client.clientID, ", msg: ", buffer[0 .. got]);
+			}
 			if (got == 0) {
 				// Then remove the socket
 				runThreadLoop = false;
@@ -121,7 +123,9 @@ class TCPServer{
 			}
 
 			if (buffer[0 .. 3] == "drw"){
-				writeln("(debug) Server recieves draw command");
+				debug {
+					writeln("Server recieves draw command");
+				}
 				draw_head++;
 				drawHistory = drawHistory[0 .. draw_head - 1];
 				drawHistory ~= ClientMessage(client.clientID, to!int(got), buffer); 	
@@ -131,7 +135,9 @@ class TCPServer{
 				}
 			}
 			else if (buffer[0 .. 4] == "undo"){
-				writeln("(debug) Server recieves undo command");
+				debug {
+					writeln("Server recieves undo command");
+				}
 				draw_head--;
 				foreach(temp_client;clientProfiles) {
 					if (temp_client == client) 
@@ -141,7 +147,9 @@ class TCPServer{
 				}
 			}
 			else if (buffer[0 .. 4] == "redo") {
-				writeln("(debug) Server recieves redo command");
+				debug {
+					writeln("Server recieves redo command");
+				}
 				draw_head++;
 				foreach(temp_client;clientProfiles) {
 					if (temp_client == client) 
@@ -153,7 +161,9 @@ class TCPServer{
 			else 
 				messageHistory ~= ClientMessage(client.clientID, to!int(got), buffer);
 
-			writeln("(debug) Draw head at ", draw_head, "/", drawHistory.length);
+			debug {
+				writeln("Draw head at ", draw_head, "/", drawHistory.length);
+			}
 			broadcastToAllClients();
 		}
 
@@ -166,7 +176,6 @@ class TCPServer{
 	}
 
 	void broadcastToAllClients(){
-		writeln("(debug) Server broadcasting the updated canvas to all clients");
 		foreach(client; clientProfiles){
 			if (client.alive == false)
 				continue;

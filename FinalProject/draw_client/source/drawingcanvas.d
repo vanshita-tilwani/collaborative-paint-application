@@ -222,7 +222,10 @@ class DrawingCanvas : DrawingArea
 	}
 
 	bool undo(){
-		writeln("(debug) undoing change made on all connected clients ");
+		debug {
+			writeln("undoing change made on all connected clients ");
+		}
+		
 		if (draw_head > 0){
 			draw_head--;
 			queueDraw();
@@ -232,7 +235,10 @@ class DrawingCanvas : DrawingArea
 	}
 
 	bool redo(){
-		writeln("(debug) redoing change made on all connected clients ");
+		debug {
+			writeln("redoing change made on all connected clients ");
+		}
+		
 		if (draw_head < drawHistory.length){
 			draw_head++;
 			queueDraw();
@@ -269,11 +275,15 @@ class DrawingCanvas : DrawingArea
 	}
 
 	void printDrawHead(){
-		writeln("(debug) Draw head at ", draw_head, "/", drawHistory.length);
+		debug {
+			writeln("Draw head at ", draw_head, "/", drawHistory.length);
+		}
 	}
 
 	void receiveDataFromServer(){
-		writeln("(debug) Recieve data for canvas from server using a new thread");
+		debug {
+			writeln("Recieve data for canvas from server using a new thread");
+		}
 		while(true){	
 			char[90] buffer;
 			auto got = clientSocket.receive(buffer);
@@ -290,17 +300,23 @@ class DrawingCanvas : DrawingArea
 					queueDraw();
 				}
 				else if (startsWith(msg_content, "hello") && to!int(match[1]) == -1) {
-					writeln("(debug) syncing draw head with server, ");
+					debug {
+						writeln("syncing draw head with server, ");
+					}
 					auto matchHelloMsg = matchFirst(msg_content, r"hello (\d+) ");
 					draw_head = to!long(matchHelloMsg[1]);
 					queueDraw();
 				}
 				else if (startsWith(msg_content, "undo")) {
-					writeln("(debug) undo action and sync with all connected clients ");
+					debug {
+						writeln("undo action and sync with all connected clients ");
+					}
 					undo();
 				}
 				else if (startsWith(msg_content, "redo")){
-					writeln("(debug) redo action and sync with all connected clients");
+					debug {
+						writeln("redo action and sync with all connected clients");
+					}
 					redo();
 				}	
 				else{
@@ -314,7 +330,9 @@ class DrawingCanvas : DrawingArea
 							chatMessage ~= ch;
 						}
 					}
-					writeln("(debug) add message from client to chat history ");
+					debug {
+						writeln("add message from client to chat history ");
+					}
 					chatHistoryText.appendText(chatMessage);
                     // chatHistoryText.queueDraw();
 				}
@@ -364,7 +382,6 @@ class DrawingCanvas : DrawingArea
 	}
 
 	public bool onMousePress(Event event, Widget widget) {
-		writeln("(debug) add pixel clicked, RGB combination and brush size to drawing instructions");
 		bool value = false;
 		
 		if(event.type == EventType.BUTTON_PRESS)
@@ -397,7 +414,9 @@ class DrawingCanvas : DrawingArea
 
 	public bool onButtonRelease(Event event, Widget widget)
 	{
-		writeln("(debug) Stop drawing on canvas ");
+		debug {
+			writeln("Stop drawing on canvas ");
+		}
 		bool value = false;
 
 		if(event.type == EventType.BUTTON_RELEASE)
@@ -412,7 +431,6 @@ class DrawingCanvas : DrawingArea
 
 	// GTK Drawing //
 	public bool drawPixels(Scoped!Context cr, Widget widget) {
-		writeln("(debug) draw on canvas according to the drawing instrctions saved");
 		printDrawHead();
 		foreach (i, drawInstruction; drawHistory) {
 			if (i == draw_head)
@@ -480,7 +498,11 @@ class SendButton : Button
     } 
 
     private bool read(Event event, Widget widget){
-		writeln("writing text right here");
+
+		debug {
+			writeln("writing text right here"); 
+		}
+		
         if(entry.getText){
             clientSocket.send(Utility.padMessage(entry.getText()).dup);
             entry.setText("");
