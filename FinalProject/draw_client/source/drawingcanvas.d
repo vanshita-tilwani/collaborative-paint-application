@@ -415,7 +415,7 @@ class DrawingCanvas : DrawingArea
 		return(value);
 	}
 
-	// GTK Drawing //
+
 	/**
 	Method responsible for drawing on the canvas
 	*/
