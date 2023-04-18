@@ -38,7 +38,7 @@ class TCPServer{
 	// Unique ID dispenser variable
 	int clientIDCounter = 0;	
 
-	this(string host, ushort port, ushort maxConnectionsBacklog=4){
+	this(string host = "localhost", ushort port=50002, ushort maxConnectionsBacklog=4){
 		writeln("Starting server...");
 		writeln("Server must be started before clients may join");
 

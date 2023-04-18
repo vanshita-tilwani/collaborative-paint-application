@@ -71,7 +71,7 @@ class DrawingCanvas : DrawingArea
 	int brush_size = 2;
 	DrawingCanvas canvas;
 
-	public this(Application app, ApplicationWindow window, string host, ushort port)
+	public this(Application app, ApplicationWindow window, string host = "localhost", ushort port=50002)
 	{
 		canvas = this;
 		// Socket setup
