@@ -27,17 +27,12 @@ jobs:
       # For us, we need to setup our linux box which only takes a few moments
       - name: Update packages on linux
         run: sudo apt-get update
-      - name: Install sdl2 dependency 
-        run: sudo apt-get install -y libsdl2-dev
       - name: Install dlang 
         run: D_VERSION=$(wget -qO - http://downloads.dlang.org/releases/LATEST) && wget -qO dmd.deb http://downloads.dlang.org/releases/2.x/${D_VERSION}/dmd_${D_VERSION}-0_amd64.deb && sudo apt install -y ./dmd.deb && dmd --version && rm -rf dmd.deb 
-#      - name: Install SDL2 deb
-#        run: wget http://http.us.debian.org/debian/pool/main/libs/libsdl2/libsdl2-dev_2.0.14+dfsg2-3+deb11u1_amd64.deb && sudo apt install -y ./libsdl2-dev_2.0.14+dfsg2-3+deb11u1_amd64.deb && sudo apt-get -f install -y
       - name: Install libgtk-3-0
         run: sudo apt-get install -y libgtk-3-0
       - name: build and run tests of project code
         run: cd ./FinalProject/draw_client && dub test 
-
       - name: build and run tests of project code
         run: cd ./FinalProject/draw_server && dub test
       # These next two steps need a little bit more explaining, because as we are finding out

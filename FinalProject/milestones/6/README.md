@@ -10,6 +10,6 @@ The final push! You are almost there!
 
 **Note** Everyone needs to speak at this meeting.
 
-- [ ] Has every one had enough tasks to work on?
-- [ ] What is your plan to finish the project?
-- [ ] Do you believe you will finish on time?
+- [✓] Has every one had enough tasks to work on?
+- [✓] What is your plan to finish the project?
+- [✓] Do you believe you will finish on time?
