@@ -7,6 +7,7 @@ You must provide a Youtube video to the client of your project working.
 	- Consider it a portfolio piece to the client showing off how your software works and what techologies you used. 
 	- Note: There should be some audio of you or your entire team covering an introduction to your project, showing off some code of your extra feature, discussion of how you figured out what to test, and how you would improve upon the project in the future.
 	- **Our video link here** : *https://youtu.be/Tr3BKtDb7h0*
+- Additional information is mentioned in [README](https://github.com/Spring23FSE/finalproject-dlangmafia/tree/master/FinalProject/milestones/7)
 
 ## Additional notes
 
