@@ -9,7 +9,7 @@
 
 * Client name: The Paint Factory
 * Project code name: Collaborative Paint
-* Key Contacts: *Your project manager*
+* Key Contacts: *Vasumathi Narayanan*
 * Estimated Schedule: ~6 weeks
 
 ### Proposal Summary
